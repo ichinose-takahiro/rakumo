@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.template.context_processors import csrf
 from django.conf import settings
-from upload_form.models import FileNameModel
+from rakumo.models import FileNameModel
 import sys, os
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
