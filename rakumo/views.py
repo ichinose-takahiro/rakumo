@@ -4,8 +4,8 @@ from django.conf import settings
 from rakumo.models import FileNameModel
 import sys, os
 import datetime
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/libs/')
-import calendarGroupList
+#sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/libs/')
+from libs import calendarGroupList
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
 # Create your views here.
