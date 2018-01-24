@@ -4,8 +4,9 @@ from django.conf import settings
 from rakumo.models import FileNameModel
 import sys, os
 import datetime
-#sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/libs/')
-from libs import calendarGroupList
+#sys.path.append('/var/www/html/mysite/rakumo/libs/')
+#sys.path.append('/var/www/html/mysite/rakumo/')
+from .calendarGroupsList import Process
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
 # Create your views here.
@@ -49,14 +50,16 @@ def form(request):
         destination.write(chunk)
 
     print('calendarGroupList_start')
-    calendarGroupList.process()
+    Process()
     print('calendarGroupList_end')
 
 
     #insert_data = FileNameModel(file_name = file.name)
     #insert_data.save()
 
-    return redirect('rakumo:complete')
+    #return redirect('rakumo:complete')
+    #return HttpResponseRedirect('/complete/')
+    return render(request, 'rakumo/complete.html')
 
 def complete(request):
     return render(request, 'rakumo/complete.html')
