@@ -78,6 +78,9 @@ def getUserData(service, w, pagetoken):
 
     return pagetoken
 
+def process():
+    main()
+
 def main():
 
     """Shows basic usage of the Google Admin SDK Directory API.
@@ -91,7 +94,7 @@ def main():
 
     # ファイル設定
     dictkey = ['kind','id','etag','email','name','directMembersCount','description','adminCreated','nonEditableAliases','aliases']
-    csvf = codecs.open('/var/www/html/googleapi/data/groups_0117.csv', 'w')
+    csvf = codecs.open('/var/www/html/rakumo/data/groups.csv', 'w')
     w = csv.DictWriter(csvf, dictkey)  # キーの取得
     w.writeheader()  # ヘッダー書き込み
 

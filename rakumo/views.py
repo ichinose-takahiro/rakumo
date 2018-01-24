@@ -3,6 +3,9 @@ from django.template.context_processors import csrf
 from django.conf import settings
 from rakumo.models import FileNameModel
 import sys, os
+import datetime
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/libs/')
+import calendarGroupList
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
 # Create your views here.
@@ -38,14 +41,20 @@ def form(request):
         return render(request, 'rakumo/form.html')
 
     file = request.FILES['file']
-    path = os.path.join(UPLOADE_DIR, file.name)
+    today = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    path = os.path.join(UPLOADE_DIR, file.name + '_' + today)
     destination = open(path, 'wb')
 
     for chunk in file.chunks():
         destination.write(chunk)
 
-    insert_data = FileNameModel(file_name = file.name)
-    insert_data.save()
+    print('calendarGroupList_start')
+    calendarGroupList.process()
+    print('calendarGroupList_end')
+
+
+    #insert_data = FileNameModel(file_name = file.name)
+    #insert_data.save()
 
     return redirect('rakumo:complete')
 
