@@ -24,6 +24,15 @@ def index(request):
     }
     return HttpResponse(template.render(context, request))
 
+def group(request):
+    #latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    template = loader.get_template('rakumo/group.html')
+    context = {
+        'latest_question_list': '',
+    }
+    return HttpResponse(template.render(context, request))
+
+
 def form(request):
     if request.method != 'POST':
         return render(request, 'rakumo/form.html')
