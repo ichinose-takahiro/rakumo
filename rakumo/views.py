@@ -26,7 +26,7 @@ def index(request):
 
 def form(request):
     if request.method != 'POST':
-        return render(request, 'upload_form/form.html')
+        return render(request, 'rakumo/form.html')
 
     file = request.FILES['file']
     path = os.path.join(UPLOADE_DIR, file.name)
@@ -38,7 +38,7 @@ def form(request):
     insert_data = FileNameModel(file_name = file.name)
     insert_data.save()
 
-    return redirect('upload_form:complete')
+    return redirect('rakumo:complete')
 
 def complete(request):
-    return render(request, 'upload_form/complete.html')
+    return render(request, 'rakumo/complete.html')
