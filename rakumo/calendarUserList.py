@@ -89,7 +89,7 @@ def getProcess():
 
     # ファイル設定
     dictkey = ['primaryEmail', 'fullName']
-    csvf = codecs.open('/var/www/html/googleapi/data/user.csv', 'w')
+    csvf = codecs.open('/var/www/html/mysite/rakumo/static/files/user.csv', 'w')
     w = csv.DictWriter(csvf, dictkey)  # キーの取得
     w.writeheader()  # ヘッダー書き込み
 

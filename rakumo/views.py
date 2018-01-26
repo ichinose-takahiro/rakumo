@@ -4,10 +4,11 @@ from django.conf import settings
 from rakumo.models import FileNameModel
 import sys, os
 import datetime
+from pytz import timezone
 #sys.path.append('/var/www/html/mysite/rakumo/libs/')
 #sys.path.append('/var/www/html/mysite/rakumo/')
-import calendarGroupsList
-import calendarUserList
+from .calendarGroupsList import Process as gProcess
+from .calendarUserList import Process as uProcess
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
 # Create your views here.
@@ -43,7 +44,7 @@ def form(request):
         return render(request, 'rakumo/form.html')
 
     #file = request.FILES['file']
-    #today = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    today = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
     #path = os.path.join(UPLOADE_DIR, file.name + '_' + today)
     #destination = open(path, 'wb')
 
@@ -53,13 +54,17 @@ def form(request):
 
     print('process_start')
     if request.POST["postType"] == 'groupmem':
-        calendarGroupsList.Process()
-        return HttpResponse(open('/var/www/html/mysite/rakumo/static/files/groups.csv', 'rb').read(),
+        gProcess()
+        response = HttpResponse(open('/var/www/html/mysite/rakumo/static/files/groups.csv', 'rb').read(),
                             content_type="text/csv")
+        response["Content-Disposition"] = "filename=googleGroupsList" + today + ".csv"
     elif request.POST["postType"] == 'user':
-        calendarUserList.Process()
-        return HttpResponse(open('/var/www/html/mysite/rakumo/static/files/user.csv', 'rb').read(),
+        uProcess()
+        response = HttpResponse(open('/var/www/html/mysite/rakumo/static/files/user.csv', 'rb').read(),
                             content_type="text/csv")
+        response["Content-Disposition"] = "filename=googleUsersList" + today + ".csv"
+
+    return response
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
     print('process_end')
 
