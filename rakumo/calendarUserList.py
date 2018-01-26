@@ -73,7 +73,10 @@ def getUserData(service, dictkey, csvf, w, pagetoken):
 
     return pagetoken
 
-def main():
+def Process():
+    getProcess()
+
+def getProcess():
 
     """Shows basic usage of the Google Admin SDK Directory API.
     Creates a Google Admin SDK API service object and outputs a list of first
@@ -106,5 +109,5 @@ def main():
     csvf.close()
     print('csv_writer_End')
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()

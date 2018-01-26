@@ -1,10 +1,18 @@
 {% extends "rakumo/group.html" %}
 
-{% block title %}アップローダサンプル{% endblock title %}
+{% block title %}googleデータ取得{% endblock title %}
 {% block content %}
+    <p>グループメンバーリスト取得</p>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
-        <input type="file" name="file">
-        <input type="submit" value="アップロード">
+        <input type='hidden' name='postType' value='groupmem'>
+        <input type="submit" value="CSVダウンロード">
+    </form>
+
+    <p>メンバーリスト取得</p>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type='hidden' name='postType' value='user'>
+        <input type="submit" value="CSVダウンロード">
     </form>
 {% endblock content %}

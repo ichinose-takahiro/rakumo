@@ -6,7 +6,8 @@ import sys, os
 import datetime
 #sys.path.append('/var/www/html/mysite/rakumo/libs/')
 #sys.path.append('/var/www/html/mysite/rakumo/')
-from .calendarGroupsList import Process
+import calendarGroupsList
+import calendarUserList
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
 # Create your views here.
@@ -41,19 +42,26 @@ def form(request):
     if request.method != 'POST':
         return render(request, 'rakumo/form.html')
 
-    file = request.FILES['file']
-    today = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    path = os.path.join(UPLOADE_DIR, file.name + '_' + today)
-    destination = open(path, 'wb')
+    #file = request.FILES['file']
+    #today = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    #path = os.path.join(UPLOADE_DIR, file.name + '_' + today)
+    #destination = open(path, 'wb')
 
-    for chunk in file.chunks():
-        destination.write(chunk)
+    #for chunk in file.chunks():
+    #    destination.write(chunk)
 
-    print('calendarGroupList_start')
-    Process()
+
+    print('process_start')
+    if request.POST["postType"] == 'groupmem':
+        calendarGroupsList.Process()
+        return HttpResponse(open('/var/www/html/mysite/rakumo/static/files/groups.csv', 'rb').read(),
+                            content_type="text/csv")
+    elif request.POST["postType"] == 'user':
+        calendarUserList.Process()
+        return HttpResponse(open('/var/www/html/mysite/rakumo/static/files/user.csv', 'rb').read(),
+                            content_type="text/csv")
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
-
-    print('calendarGroupList_end')
+    print('process_end')
 
 
     #insert_data = FileNameModel(file_name = file.name)
@@ -61,7 +69,7 @@ def form(request):
 
     #return redirect('rakumo:complete')
     #return HttpResponseRedirect('/complete/')
-    return HttpResponse(open('/var/www/html/mysite/rakumo/static/files/groups.csv','rb').read(), content_type="text/csv")
+    #return HttpResponse(open('/var/www/html/mysite/rakumo/static/files/groups.csv','rb').read(), content_type="text/csv")
     #return render(request, 'rakumo/complete.html')
 
 def complete(request):
