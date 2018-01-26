@@ -51,6 +51,8 @@ def form(request):
 
     print('calendarGroupList_start')
     Process()
+    #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
+
     print('calendarGroupList_end')
 
 
@@ -59,7 +61,8 @@ def form(request):
 
     #return redirect('rakumo:complete')
     #return HttpResponseRedirect('/complete/')
-    return render(request, 'rakumo/complete.html')
+    return HttpResponse(open('/var/www/html/mysite/rakumo/static/files/groups.csv','rb').read(), content_type="text/csv")
+    #return render(request, 'rakumo/complete.html')
 
 def complete(request):
     return render(request, 'rakumo/complete.html')
