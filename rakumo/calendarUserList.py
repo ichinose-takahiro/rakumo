@@ -19,8 +19,10 @@ except ImportError:
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/admin-directory_v1-python-quickstart.json
 SCOPES = 'https://www.googleapis.com/auth/admin.directory.user'
-CLIENT_SECRET_FILE = '../json/client_secret.json'
+CLIENT_SECRET_FILE = './json/client_secret.json'
 APPLICATION_NAME = 'Directory API Python Quickstart'
+CSVFILE = '/var/www/html/mysite/rakumo/static/files/user.csv'
+DICTKEY = ['primaryEmail', 'fullName']
 
 
 def get_credentials():
@@ -88,8 +90,8 @@ def getProcess():
     service = discovery.build('admin', 'directory_v1', http=http)
 
     # ファイル設定
-    dictkey = ['primaryEmail', 'fullName']
-    csvf = codecs.open('/var/www/html/mysite/rakumo/static/files/user.csv', 'w')
+    dictkey = DICTKEY
+    csvf = codecs.open(CSVFILE, 'w')
     w = csv.DictWriter(csvf, dictkey)  # キーの取得
     w.writeheader()  # ヘッダー書き込み
 

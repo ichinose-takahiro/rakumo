@@ -9,6 +9,9 @@ from pytz import timezone
 #sys.path.append('/var/www/html/mysite/rakumo/')
 from .calendarGroupsList import Process as gProcess
 from .calendarUserList import Process as uProcess
+from .calendarGroupsMemberList import Process as gmProcess
+from .calendarResourceList import Process as rProcess
+from .loginglibrary import init
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
 # Create your views here.
@@ -21,6 +24,7 @@ from django.http import HttpResponse
 from django.template import loader
 
 #from .models import Question
+loging = init()
 
 def index(request):
     #latest_question_list = Question.objects.order_by('-pub_date')[:5]
@@ -53,16 +57,35 @@ def form(request):
 
 
     print('process_start')
-    if request.POST["postType"] == 'groupmem':
+    if request.POST["postType"] == 'group':
+        loging.debug('postType group output start')
         gProcess()
         response = HttpResponse(open('/var/www/html/mysite/rakumo/static/files/groups.csv', 'rb').read(),
                             content_type="text/csv")
-        response["Content-Disposition"] = "filename=googleGroupsList" + today + ".csv"
+        response["Content-Disposition"] = "filename=googleGroupsList_" + today + ".csv"
+        loging.debug('postType group output end')
+    elif request.POST["postType"] == 'groupmem':
+        loging.debug('postType groupmem output start')
+        gmProcess()
+        response = HttpResponse(open('/var/www/html/mysite/rakumo/static/files/groupMember.csv', 'rb').read(),
+                                content_type="text/csv")
+        response["Content-Disposition"] = "filename=googleGroupMemberList_" + today + ".csv"
+        loging.debug('postType groupmem output end')
+    elif request.POST["postType"] == 'resource':
+        loging.debug('postType resource output start')
+        rProcess()
+        response = HttpResponse(open('/var/www/html/mysite/rakumo/static/files/resource.csv', 'rb').read(),
+                                content_type="text/csv")
+        response["Content-Disposition"] = "filename=googleResourceList_" + today + ".csv"
+        loging.debug('postType resource output end')
+
     elif request.POST["postType"] == 'user':
+        loging.debug('postType user output start')
         uProcess()
         response = HttpResponse(open('/var/www/html/mysite/rakumo/static/files/user.csv', 'rb').read(),
                             content_type="text/csv")
-        response["Content-Disposition"] = "filename=googleUsersList" + today + ".csv"
+        response["Content-Disposition"] = "filename=googleUsersList_" + today + ".csv"
+        loging.debug('postType user output end')
 
     return response
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")

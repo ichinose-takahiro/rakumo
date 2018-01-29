@@ -7,6 +7,14 @@ from oauth2client import tools
 from oauth2client.file import Storage
 import csv
 
+SCOPES = 'https://www.googleapis.com/auth/admin.directory.resource.calendar'
+CLIENT_SECRET_FILE = './json/client_secret.json'
+APPLICATION_NAME = 'Directory API Python Quickstart'
+CSVFILE = '/var/www/html/mysite/rakumo/static/files/resource.csv'
+DICTKEY = ['kind', 'etags', 'resourceId', 'resourceName', 'generatedResourceName',
+             'resourceType', 'resourceDescription', 'resourceEmail', 'resourceCategory',
+             'userVisibleDescription','capacity']
+
 def getResourceData(service, dictkey, csvf, w, pagetoken):
     print('Getting the first 10 users in the domain')
     #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
@@ -31,7 +39,10 @@ def getResourceData(service, dictkey, csvf, w, pagetoken):
 
     return pagetoken
 
-def main():
+def Process():
+    getProcess()
+
+def getProcess():
 
     try:
         import argparse
@@ -56,7 +67,7 @@ def main():
 
         # 使用する機能の範囲を設定
         scopes = [
-            'https://www.googleapis.com/auth/admin.directory.resource.calendar',
+            SCOPES,
         ]
 
         # 認証キーの設定
@@ -68,10 +79,10 @@ def main():
         # flow = client.flow_from_clientsecrets(
         #     os.path.join(secret_dir, 'client_secret_test.json'), scopes)
 
-        flow = client.flow_from_clientsecrets( '../json/client_secret.json', scopes)
+        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, scopes)
 
         # アプリケーションの名前
-        flow.user_agent = 'User register Test Tool'
+        flow.user_agent = APPLICATION_NAME
 
         if flags:
             credentials = tools.run_flow(flow, store, flags)
@@ -83,12 +94,10 @@ def main():
     http = credentials.authorize(httplib2.Http())
     app_admin_service = discovery.build('admin', 'directory_v1', http=http)
 
-    csvf = open('/var/www/html/googleapi/data/resource_20180110.csv', 'w')
+    csvf = open(CSVFILE, 'w')
 
     # 列の設定
-    dictkey=['kind', 'etags', 'resourceId', 'resourceName', 'generatedResourceName',
-             'resourceType', 'resourceDescription', 'resourceEmail', 'resourceCategory',
-             'userVisibleDescription','capacity']
+    dictkey=DICTKEY
 
     w = csv.DictWriter(csvf, dictkey) # キーの取得
     w.writeheader() # ヘッダー書き込み
@@ -120,5 +129,5 @@ def main():
 
     print('csv_writer_End')
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()
