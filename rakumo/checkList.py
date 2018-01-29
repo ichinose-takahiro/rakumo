@@ -5,14 +5,13 @@ checkList = []
 loging = init('checkdata')
 
 
-def doCheck(checkList, EVENTKEY):
+def doCheck(checkList, eventkey):
 
-    ret = True
-
-    loging.debug(ast.literal_eval(checkList[0]))
     dictList = ast.literal_eval(checkList[0])
     keyList =  dictList.keys()
+    if len(keyList) != len(eventkey):
+       raise forms.ValidationError("項目数に差異があります")
     for key in keyList:
         if key not in EVENTKEY:
-            ret = False
-            raise forms.ValidationError("Headline must be more than 5 characters.")
+            raise forms.ValidationError("必要な項目が不足しています")
+
