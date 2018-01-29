@@ -7,8 +7,11 @@ from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
+from .loginglibrary import init
 import csv
 import codecs
+
+logging = init('user')
 
 try:
     import argparse
@@ -50,20 +53,20 @@ def get_credentials():
             credentials = tools.run_flow(flow, store, flags)
         else: # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
-        print('Storing credentials to ' + credential_path)
+        logging.debug('Storing credentials to ' + credential_path)
     return credentials
 
 def getUserData(service, dictkey, csvf, w, pagetoken):
-    print('Getting the first 10 users in the domain')
+    logging.debug('Getting the first 10 users in the domain')
     #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
     results = service.users().list(customer='my_customer', orderBy='email', pageToken=pagetoken).execute()
     users = results.get('users', [])
 
     if not users:
-        print('No users in the domain.')
+        logging.debug('No users in the domain.')
 
     else:
-        print('get user.')
+        logging.debug('get user.')
         if 'nextPageToken' in results:
             pagetoken = results['nextPageToken']
         else:
@@ -100,7 +103,7 @@ def getProcess():
     cnt = 0
     # 限界2000件まで取ってくる
     while cnt < 20:
-        print(service)
+        logging.debug(service)
         pagetoken = getUserData(service, dictkey, csvf, w, pagetoken)
         if pagetoken is None:
             break
@@ -109,7 +112,7 @@ def getProcess():
         # results = service.users().list(customer='my_customer', orderBy='email', pageToken=pagetoken).execute()
 
     csvf.close()
-    print('csv_writer_End')
+    logging.debug('csv_writer_End')
 
 #if __name__ == '__main__':
 #    main()

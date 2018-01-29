@@ -5,6 +5,7 @@ from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
+from .loginglibrary import init
 import csv
 
 SCOPES = 'https://www.googleapis.com/auth/admin.directory.resource.calendar'
@@ -15,8 +16,10 @@ DICTKEY = ['kind', 'etags', 'resourceId', 'resourceName', 'generatedResourceName
              'resourceType', 'resourceDescription', 'resourceEmail', 'resourceCategory',
              'userVisibleDescription','capacity']
 
+logging = init('resource')
+
 def getResourceData(service, dictkey, csvf, w, pagetoken):
-    print('Getting the first 10 users in the domain')
+    logging.debug('Getting the first 10 users in the domain')
     #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
     #results = service.users().list(customer='my_customer', orderBy='email', pageToken=pagetoken).execute()
 
@@ -24,10 +27,10 @@ def getResourceData(service, dictkey, csvf, w, pagetoken):
     resourcedatas = service.resources().calendars().list(customer='my_customer', pageToken=pagetoken).execute()
 
     if not resourcedatas:
-        print('No users in the domain.')
+        logging.debug('No resources in the domain.')
 
     else:
-        print('get user.')
+        logging.debug('get resource.')
         if 'nextPageToken' in resourcedatas:
             pagetoken = resourcedatas['nextPageToken']
         else:
@@ -88,7 +91,7 @@ def getProcess():
             credentials = tools.run_flow(flow, store, flags)
         else:  # Python 2.6　互換用処理
             credentials = tools.run(flow, store)
-        print('証明書を保存しました： ' + credential_path)
+        logging.debug('証明書を保存しました： ' + credential_path)
 
     # 認証を行う
     http = credentials.authorize(httplib2.Http())
@@ -112,7 +115,7 @@ def getProcess():
         cnt = cnt+1
 #    resourcedatas = app_admin_service.resources().calendars().list(customer='my_customer').execute()
     # print(resourcedatas)
-    print('csv_writer_start')
+    logging.debug('csv_writer_start')
 
 
 
@@ -127,7 +130,7 @@ def getProcess():
 
     csvf.close()
 
-    print('csv_writer_End')
+    logging.debug('csv_writer_End')
 
 #if __name__ == '__main__':
 #    main()

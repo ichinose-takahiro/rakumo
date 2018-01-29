@@ -16,7 +16,7 @@ import codecs
 import httplib2
 import json
 
-loging = loginit()
+loging = loginit('groupmem')
 try:
     import argparse
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()

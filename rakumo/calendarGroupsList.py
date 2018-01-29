@@ -21,7 +21,7 @@ try:
 except ImportError:
     flags = None
 
-logging = init()
+logging = init('group')
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/admin-directory_v1-python-quickstart.json
