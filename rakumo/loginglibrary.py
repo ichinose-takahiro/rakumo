@@ -1,6 +1,8 @@
 from logging.handlers import TimedRotatingFileHandler
 import logging
 
+loggers = {}
+
 def init(name=None):
     global loggers
     if name is None:
@@ -9,8 +11,9 @@ def init(name=None):
     if loggers.get(name):
         return loggers.get(name)
 
+    logger = None
     # ルートロガーを取得
-    logger = logging.getLogger()
+    logger = logging.getLogger(name)
 
     # フォーマッターを作成
     formatter = logging.Formatter('%(asctime)s %(name)s %(funcName)s [%(levelname)s]: %(message)s')
@@ -27,5 +30,5 @@ def init(name=None):
     # ロガーにハンドラーを設定、イベント捕捉のためのレベルを設定
     logger.addHandler(handler)
     logger.setLevel(logging.DEBUG)
-
+    loggers[name] = logger
     return logger
