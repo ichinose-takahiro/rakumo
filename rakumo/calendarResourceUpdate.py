@@ -5,11 +5,17 @@ from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
+from .checkList import doCheck
+from .loginglibrary import init
 import csv
 import json
 
+logging = init('resourceUpdate')
+
 WORKDIR = '/var/www/html/googleapi'
-RESOURCE = WORKDIR + '/data/updateResource_1221.csv'
+#RESOURCE = WORKDIR + '/data/updateResource_1221.csv'
+RESOURCE = ''
+EVENTKEY = {'resourceId','resourceName','generatedResourceName','resourceType'}
 
 "会議室データを取得"
 def getResource():
@@ -28,15 +34,17 @@ def getResourceData(service):
     print('Getting the first 10 users in the domain')
 
     upDateList = getResource()
-
-
+    doCheck(upDateList, EVENTKEY)
 
     for upDataData in upDateList:
         upDataData = json.loads(upDataData,encoding='UTF-8')
         print(upDataData['resourceId'])
         print(upDataData['resourceName'])
         print(upDataData['generatedResourceName'])
-        EVENT = {"resourceId":upDataData['resourceId'], "resourceName":upDataData['resourceName'], "generatedResourceName": upDataData['generatedResourceName'], "resourceType":upDataData['resourceType']}
+        EVENT = {"resourceId":upDataData['resourceId'],
+                 "resourceName":upDataData['resourceName'],
+                 "generatedResourceName": upDataData['generatedResourceName'],
+                 "resourceType":upDataData['resourceType']}
 #        EVENT['resourceId'] = upDataData['resourceId']
 #        EVENT['resourceName'] = upDataData['resourceName']
 #        EVENT['generatedResourceName'] = upDataData['generatedResourceName']
@@ -45,7 +53,12 @@ def getResourceData(service):
         print(resourcedatas)
         print(upDataData['resourceId'] + ':update!')
 
-def main():
+def Process(name):
+    global RESOURCE
+    RESOURCE = name
+    getProcess()
+
+def getProcess():
 
     try:
         import argparse
@@ -101,4 +114,4 @@ def main():
     print('complete')
 
 if __name__ == '__main__':
-    main()
+    Process()

@@ -11,6 +11,7 @@ from .calendarGroupsList import Process as gProcess
 from .calendarUserList import Process as uProcess
 from .calendarGroupsMemberList import Process as gmProcess
 from .calendarResourceList import Process as rProcess
+from .calendarResourceUpdate import Process as ruProcess
 from .loginglibrary import init
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
@@ -87,6 +88,13 @@ def form(request):
         response["Content-Disposition"] = "filename=googleUsersList_" + today + ".csv"
         loging.debug('postType user output end')
 
+    elif request.POST["postType"] == 'resourceUpdate':
+        loging.debug('postType resource update start')
+        path = upload(request)
+        ruProcess(path)
+        loging.debug('postType user output end')
+
+
     return response
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
     print('process_end')
@@ -102,3 +110,17 @@ def form(request):
 
 def complete(request):
     return render(request, 'rakumo/complete.html')
+
+def upload(request):
+
+    file = request.FILES['file']
+    path = os.path.join(UPLOADE_DIR, file.name)
+    destination = open(path, 'wb')
+
+    for chunk in file.chunks():
+        destination.write(chunk)
+
+    insert_data = FileNameModel(file_name = file.name)
+    insert_data.save()
+
+    return path

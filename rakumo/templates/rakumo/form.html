@@ -29,4 +29,41 @@
         <input type='hidden' name='postType' value='user'>
         <input type="submit" value="CSVダウンロード">
     </form>
+
+    <p>施設情報更新</p>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type='file' name='file' maxlength="50">
+        <input type='hidden' name='postType' value='resourceUpdate'>
+        <input type="submit" value="取り込み実行">
+    </form>
+
+    <p>施設情報更新テンプレート取得</p>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type='hidden' name='postType' value='resourceTmp'>
+        <input type="submit" value="ダウンロード">
+    </form>
+
+    <p>グループメンバー追加</p>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type='hidden' name='postType' value='groupmemAdd'>
+        <input type="submit" value="取り込み実行">
+    </form>
+
+    <p>グループメンバー更新</p>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type='hidden' name='postType' value='groupmemUpdate'>
+        <input type="submit" value="取り込み実行">
+    </form>
+
+    <p>グループメンバー更新テンプレート取得</p>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type='hidden' name='postType' value='groupmemTmp'>
+        <input type="submit" value="ダウンロード">
+    </form>
+
 {% endblock content %}
