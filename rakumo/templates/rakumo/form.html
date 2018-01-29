@@ -16,6 +16,13 @@
         <input type="submit" value="CSVダウンロード">
     </form>
 
+    <p>施設リスト取得</p>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type='hidden' name='postType' value='resource'>
+        <input type="submit" value="CSVダウンロード">
+    </form>
+
     <p>メンバーリスト取得</p>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
