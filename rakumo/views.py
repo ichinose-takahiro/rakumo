@@ -13,6 +13,7 @@ from .calendarGroupsMemberList import Process as gmProcess
 from .calendarResourceList import Process as rProcess
 from .calendarResourceUpdate import Process as ruProcess
 from .loginglibrary import init
+from django import forms 
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
 # Create your views here.
@@ -89,13 +90,18 @@ def form(request):
         loging.debug('postType user output end')
 
     elif request.POST["postType"] == 'resourceUpdate':
-        loging.debug('postType resource update start')
-        path = upload(request)
-        ruProcess(path)
-        loging.debug('postType user output end')
+        try:
+            loging.debug('postType resource update start')
+            path = upload(request)
+            ruProcess(path)
+            loging.debug('postType user output end')
+        except Exception as e:
+            return render(request, 'rakumo/form.html', {
+            'error_message': "You didn't select a choice.",
+            })
+           # return render(request, 'rakumo/form.html')
 
-
-    return response
+#    return response
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
     print('process_end')
 
@@ -120,7 +126,7 @@ def upload(request):
     for chunk in file.chunks():
         destination.write(chunk)
 
-    insert_data = FileNameModel(file_name = file.name)
-    insert_data.save()
+    #insert_data = FileNameModel(file_name = file.name)
+    #insert_data.save()
 
     return path

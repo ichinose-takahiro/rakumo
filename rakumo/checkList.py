@@ -1,14 +1,18 @@
+import ast
 from django import forms
+from .loginglibrary import init
 checkList = []
+loging = init('checkdata')
 
-def doCheck(upDateList, EVENTKEY):
+
+def doCheck(checkList, EVENTKEY):
 
     ret = True
 
-    checkList = dict(upDateList)
-    keyList = checkList.keys()
+    loging.debug(ast.literal_eval(checkList[0]))
+    dictList = ast.literal_eval(checkList[0])
+    keyList =  dictList.keys()
     for key in keyList:
         if key not in EVENTKEY:
             ret = False
-
-    raise forms.ValidationError("You forgot to retype your password.")
+            raise forms.ValidationError("Headline must be more than 5 characters.")
