@@ -104,7 +104,9 @@ def form(request):
             'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',
             })
 
-        # return render(request, 'rakumo/form.html')
+    return render(request, 'rakumo/form.html', {
+            'error_message': '処理完了しました。ご確認ください',
+            })
 
 #    return response
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
