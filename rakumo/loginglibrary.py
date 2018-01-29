@@ -1,7 +1,14 @@
 from logging.handlers import TimedRotatingFileHandler
 import logging
 
-def init():
+def init(name=None):
+    global loggers
+    if name is None:
+        name = __name__
+
+    if loggers.get(name):
+        return loggers.get(name)
+
     # ルートロガーを取得
     logger = logging.getLogger()
 
@@ -10,7 +17,7 @@ def init():
 
     # ハンドラーを作成しフォーマッターを設定
     handler = TimedRotatingFileHandler(
-        filename="/var/log/rakumoLog.log",
+        filename="/var/log/rakumo/rakumoLog.log",
         when="D",
         interval=1,
         backupCount=31,

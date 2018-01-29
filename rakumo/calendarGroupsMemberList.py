@@ -10,7 +10,7 @@ from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
-from loginglibrary import init as loginit
+from .loginglibrary import init as loginit
 import csv
 import codecs
 import httplib2
@@ -143,11 +143,13 @@ def getProcess():
     Creates a Google Admin SDK API service object and outputs a list of first
     10 users in the domain.
     """
+    loging.debug('1')
     # 認証
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('admin', 'directory_v1', http=http)
 
+    loging.debug('2')
     # ファイル設定
     dictkey = DICTKEY
     csvf = codecs.open(CSVFILE, 'w')
@@ -159,6 +161,7 @@ def getProcess():
     cnt = 0
     # 限界2000件まで取ってくる
     while cnt < 20:
+        loging.debug('3:'+ str(cnt))
         pagetoken = getUserData(service, w, pagetoken, http)
         if pagetoken is None:
             break
@@ -167,5 +170,5 @@ def getProcess():
     csvf.close()
     loging.debug('csv_writer_End')
 
-#if __name__ == '__main__':
-#    main()
+if __name__ == '__main__':
+    getProcess()
