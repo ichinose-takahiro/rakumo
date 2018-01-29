@@ -10,11 +10,13 @@ from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
+from loginglibrary import init as loginit
 import csv
 import codecs
 import httplib2
 import json
 
+loging = loginit()
 try:
     import argparse
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
@@ -55,7 +57,7 @@ def get_credentials():
             credentials = tools.run_flow(flow, store, flags)
         else: # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
-        print('Storing credentials to ' + credential_path)
+        loging.debug('Storing credentials to ' + credential_path)
     return credentials
 
 def get_group_members(group, http):
@@ -74,21 +76,21 @@ def call_google_api(method, url,http ,payload=False):
      else:
         (resp, content) = http.request(uri=url, method=method)
  except Exception as e:
-    print('Failed to post request to [{}] due to: {}').format(url, e)
+     loging.debug('Failed to post request to [{}] due to: {}').format(url, e)
  return json.loads(content)
 
 
 def getUserData(service, w, pagetoken, http):
-    print('Getting the first 10 users in the domain')
+    loging.debug('Getting the first 10 users in the domain')
     #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
     results = service.groups().list(customer='my_customer', pageToken=pagetoken).execute()
     groups = results.get('groups', [])
-    print(results)
+    loging.debug(results)
     if not groups:
-        print('No users in the domain.')
+        loging.debug('No users in the domain.')
 
     else:
-        print('get user.')
+        loging.debug('get user.')
         if 'nextPageToken' in results:
             pagetoken = results['nextPageToken']
         else:
@@ -100,10 +102,10 @@ def getUserData(service, w, pagetoken, http):
 
             if 'members' in tresult.keys():
                 members = tresult['members']
-                print('------------')
+                loging.debug('------------')
                 for member in members:
-                    print(group['name'])
-                    print(member)
+                    loging.debug(group['name'])
+                    loging.debug(member)
                     rowMember = {
                         'groupId': group['id'],
                         'groupEmail': group['email'],
@@ -163,7 +165,7 @@ def getProcess():
         cnt = cnt+1
 
     csvf.close()
-    print('csv_writer_End')
+    loging.debug('csv_writer_End')
 
 #if __name__ == '__main__':
 #    main()
