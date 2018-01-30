@@ -30,7 +30,7 @@
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <input type='file' name='file' maxlength="50">
-        <input type='hidden' name='postType' value='groupmemDelete'>
+        <input type='hidden' name='postType' value='groupmemDel'>
         <input type="submit" value="取り込み実行">
     </form>
 
