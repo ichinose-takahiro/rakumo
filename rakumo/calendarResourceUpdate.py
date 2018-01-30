@@ -31,16 +31,11 @@ def csvToJson(csvData):
     return jsonData
 
 def getResourceData(service):
-    print('Getting the first 10 users in the domain')
-
     upDateList = getResource()
     doCheck(upDateList, EVENTKEY)
 
     for upDataData in upDateList:
         upDataData = json.loads(upDataData,encoding='UTF-8')
-        print(upDataData['resourceId'])
-        print(upDataData['resourceName'])
-        print(upDataData['generatedResourceName'])
         EVENT = {"resourceId":upDataData['resourceId'],
                  "resourceName":upDataData['resourceName'],
                  "generatedResourceName": upDataData['generatedResourceName'],
@@ -48,10 +43,9 @@ def getResourceData(service):
 #        EVENT['resourceId'] = upDataData['resourceId']
 #        EVENT['resourceName'] = upDataData['resourceName']
 #        EVENT['generatedResourceName'] = upDataData['generatedResourceName']
-        print(EVENT)
         resourcedatas = service.resources().calendars().update(customer='my_customer', calendarResourceId='appsadmin@919.jp', body=EVENT).execute()
-        print(resourcedatas)
-        print(upDataData['resourceId'] + ':update!')
+        logging.info(resourcedatas)
+        logging.info(upDataData['resourceId'] + ':update!')
 
 def Process(name):
     global RESOURCE
@@ -104,14 +98,13 @@ def getProcess():
             credentials = tools.run_flow(flow, store, flags)
         else:  # Python 2.6　互換用処理
             credentials = tools.run(flow, store)
-        print('証明書を保存しました： ' + credential_path)
+        logging.info('証明書を保存しました： ' + credential_path)
 
     # 認証を行う
     http = credentials.authorize(httplib2.Http())
     app_admin_service = discovery.build('admin', 'directory_v1', http=http)
 
     getResourceData(app_admin_service)
-    print('complete')
 
 if __name__ == '__main__':
     Process()

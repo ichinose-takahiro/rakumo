@@ -109,6 +109,7 @@ def deleteData(service, http):
 
         group = json.loads(group, encoding='UTF-8')
         tresult = del_group_members(group, http)
+        logging.info(tresult)
 
 def Process(name):
     global RESOURCE

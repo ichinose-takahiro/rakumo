@@ -80,7 +80,7 @@ def get_credentials():
             credentials = tools.run_flow(flow, store, flags)
         else: # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
-        print('Storing credentials to ' + credential_path)
+        logging.debug('Storing credentials to ' + credential_path)
     return credentials
 
 def get_group_members(group, http):
@@ -94,11 +94,11 @@ def call_google_api(method, url,payload,http):
         (resp, content) = http.request(uri=url, method=method, body=json.dumps(payload),
                                        headers={'Content-type': 'application/json'})
     except Exception as e:
-        print('Failed to post request to [{}] due to: {}').format(url, e)
+        logging.debug('Failed to post request to [{}] due to: {}').format(url, e)
     if resp['status'] == '200':
-        print(payload['email']+':insert!')
+        logging.debug(payload['email']+':insert!')
     else:
-        print(payload['email']+':NG!')
+        logging.debug(payload['email']+':NG!')
 
 def insertData(service, http):
 
@@ -109,7 +109,7 @@ def insertData(service, http):
 
         group = json.loads(group, encoding='UTF-8')
         tresult = get_group_members(group, http)
-        print('insert!')
+        logging.debug(tresult)
 
 def Process(name):
     global RESOURCE
@@ -128,7 +128,6 @@ def getProcess():
     service = discovery.build('admin', 'directory_v1', http=http)
 
     insertData(service, http)
-    print('csv_writer_End')
 
 if __name__ == '__main__':
     Process()

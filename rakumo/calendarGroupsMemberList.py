@@ -81,16 +81,14 @@ def call_google_api(method, url,http ,payload=False):
 
 
 def getUserData(service, w, pagetoken, http):
-    loging.debug('Getting the first 10 users in the domain')
-    #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
     results = service.groups().list(customer='my_customer', pageToken=pagetoken).execute()
+    loging.info(results)
     groups = results.get('groups', [])
     loging.debug(results)
     if not groups:
-        loging.debug('No users in the domain.')
+        loging.info('No users in the domain.')
 
     else:
-        loging.debug('get user.')
         if 'nextPageToken' in results:
             pagetoken = results['nextPageToken']
         else:
@@ -119,6 +117,8 @@ def getUserData(service, w, pagetoken, http):
                     }
                     w.writerow(rowMember)
             else:
+                loging.debug(group['name'])
+                loging.debug(member)
                 rowMember = {
                     'groupId': group['id'],
                     'groupEmail': group['email'],
@@ -143,13 +143,11 @@ def getProcess():
     Creates a Google Admin SDK API service object and outputs a list of first
     10 users in the domain.
     """
-    loging.debug('1')
     # 認証
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('admin', 'directory_v1', http=http)
 
-    loging.debug('2')
     # ファイル設定
     dictkey = DICTKEY
     csvf = codecs.open(CSVFILE, 'w')
@@ -161,7 +159,6 @@ def getProcess():
     cnt = 0
     # 限界2000件まで取ってくる
     while cnt < 20:
-        loging.debug('3:'+ str(cnt))
         pagetoken = getUserData(service, w, pagetoken, http)
         if pagetoken is None:
             break
