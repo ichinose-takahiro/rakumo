@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'polls',
     'rakumo',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -122,3 +123,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+
+LOGIN_ERROR_URL = '/accounts/login'
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/accounts/index/'
+
+AUTH_USER_MODEL = 'accounts.AuthUser'
