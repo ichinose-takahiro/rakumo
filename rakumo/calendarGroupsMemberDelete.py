@@ -93,6 +93,8 @@ def call_google_api(method, url, payload, http):
     try:
         (resp, content) = http.request(uri=url, method=method,
                                        headers={'Content-type': 'application/json'})
+        logging.debug(resp)
+        logging.debug(content)
     except Exception as e:
         logging.debug('Failed to post request to [{}] due to: {}').format(url, e)
     if resp['status'] == '200':

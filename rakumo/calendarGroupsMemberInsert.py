@@ -93,6 +93,8 @@ def call_google_api(method, url,payload,http):
     try:
         (resp, content) = http.request(uri=url, method=method, body=json.dumps(payload),
                                        headers={'Content-type': 'application/json'})
+        logging.debug(resp)
+        logging.debug(content)
     except Exception as e:
         logging.debug('Failed to post request to [{}] due to: {}').format(url, e)
     if resp['status'] == '200':
@@ -108,8 +110,7 @@ def insertData(service, http):
     for group in groupList:
 
         group = json.loads(group, encoding='UTF-8')
-        tresult = get_group_members(group, http)
-        logging.debug(tresult)
+        get_group_members(group, http)
 
 def Process(name):
     global RESOURCE

@@ -10,8 +10,11 @@ from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
+from .loginglibrary import init
 import csv
 import json
+
+logging = init('groupInsert')
 
 try:
     import argparse
@@ -72,7 +75,7 @@ def get_credentials():
             credentials = tools.run_flow(flow, store, flags)
         else: # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
-        print('Storing credentials to ' + credential_path)
+        logging.debug('Storing credentials to ' + credential_path)
     return credentials
 
 def insertData(service):
@@ -88,8 +91,8 @@ def insertData(service):
                  "nonEditableAliases": insrtData['nonEditableAliases']}
         print(EVENT)
         resourcedatas = service.groups().insert(body=EVENT).execute()
-        print(resourcedatas)
-        print(insrtData['email'] + ':insert!')
+        logging.debug(resourcedatas)
+        logging.info(insrtData['email'] + ':insert!')
 
 def main():
 
@@ -103,7 +106,6 @@ def main():
     service = discovery.build('admin', 'directory_v1', http=http)
 
     insertData(service)
-    print('csv_writer_End')
 
 if __name__ == '__main__':
     main()
