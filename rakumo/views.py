@@ -63,7 +63,10 @@ def form(request):
     response = None
     rform = 'rakumo/form.html'
     postType = request.POST["postType"]
-    path = upload(request)
+    try:
+        path = upload(request)
+    except KeyError as e:
+        return render(request, rform, {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。'})
     request.FILES['file'] = None
 
     print('process_start')
@@ -103,7 +106,8 @@ def form(request):
             loging.debug('postType resource update start')
             ruProcess(path)
             loging.debug('postType resource output end')
-            response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
+            #response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
+            response = redirect('rakumo:complete')
         except forms.ValidationError as e:
             response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:
@@ -114,7 +118,8 @@ def form(request):
             loging.debug('postType groupmem add start')
             gmaProcess(path)
             loging.debug('postType groupmem add end')
-            response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
+            #response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
+            response = redirect('rakumo:complete')
         except forms.ValidationError as e:
             response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:
@@ -137,7 +142,8 @@ def form(request):
             loging.debug('postType groupmem update start')
             gmdProcess(path)
             loging.debug('postType groupmem update end')
-            response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
+            #response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
+            response = redirect('rakumo:complete')
         except forms.ValidationError as e:
             response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:
