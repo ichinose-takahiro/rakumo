@@ -96,31 +96,27 @@ def form(request):
             path = upload(request)
             ruProcess(path)
             loging.debug('postType user output end')
-        except forms.ValidationError as e:
-            #return render(request, 'rakumo/form.html', {
-            #'error_message': e.args[0],
-            #})
             t = loader.get_template('rakumo/form.html')
-            c = Context({
-                'error_message': e.args[0],
-            })
-            response = HttpResponse(t.render(c))
-        except KeyError as e:
-            #return render(request, 'rakumo/form.html', {
-            #'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',
-            #})
-            t = loader.get_template('rakumo/form.html')
-            c = Context({
-                'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',
-            })
-            response = HttpResponse(t.render(c))
-
-#    return render(request, 'rakumo/form.html', {
-#            'error_message': '処理完了しました。ご確認ください',
-#            })
-    response['Context'] = {
-            'error_message': '処理完了しました。ご確認ください',
+            c = {
+               'info_message': '処理完了しました。ご確認ください',
             }
+            response = HttpResponse(t.render(c, request))
+        except forms.ValidationError as e:
+            t = loader.get_template('rakumo/form.html')
+            c = {
+               'error_message': e.args[0],
+            }
+            response = HttpResponse(t.render(c, request))
+            loging.debug(vars(response))
+            #return HttpResponse(t.render(c, request))
+            #loging.debug(vars(response))
+        except KeyError as e:
+            t = loader.get_template('rakumo/form.html')
+            c = {
+                'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',
+            }
+            response = HttpResponse(t.render(c, request))
+
     return response
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
     print('process_end')

@@ -2,8 +2,8 @@
 
 {% block title %}googleデータ取得{% endblock title %}
 {% block content %}
-    {{error_message}}
-
+    <font color="red">{{error_message}}</font>
+    {{info_message}}
     <p>グループリスト取得</p>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
