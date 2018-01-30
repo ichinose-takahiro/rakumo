@@ -14,7 +14,7 @@ from .calendarGroupsMemberList import Process as gmProcess
 from .calendarResourceList import Process as rProcess
 from .calendarResourceUpdate import Process as ruProcess
 from .calendarGroupsMemberInsert import Process as gmaProcess
-#from .calendarGroupsMemberUpdate import Process as gmuProcess
+from .calendarGroupsMemberDelete import Process as gmdProcess
 from .loginglibrary import init
 from django import forms
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/upload/'
@@ -132,21 +132,19 @@ def form(request):
                                 content_type="text/csv")
         response["Content-Disposition"] = "filename=groupmenberInsertTmp.csv"
         loging.debug('postType resource output end')
-
-
-    #elif request.POST["postType"] == 'groupmemUpdate':
-    #    t = loader.get_template('rakumo/form.html')
-    #    try:
-    #        loging.debug('postType groupmem update start')
-    #        path = upload(request)
-    #        gmaProcess(path)
-    #        loging.debug('postType groupmem update end')
-    #        c = {'info_message': '処理完了しました。ご確認ください',}
-    #    except forms.ValidationError as e:
-    #        c = {'error_message': e.args[0],}
-    #    except KeyError as e:
-    #        c = {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',}
-    #    response = HttpResponse(t.render(c, request))
+    elif request.POST["postType"] == 'groupmemDel':
+        t = loader.get_template('rakumo/form.html')
+        try:
+            loging.debug('postType groupmem update start')
+            path = upload(request)
+            gmdProcess(path)
+            loging.debug('postType groupmem update end')
+            c = {'info_message': '処理完了しました。ご確認ください',}
+        except forms.ValidationError as e:
+             c = {'error_message': e.args[0],}
+        except KeyError as e:
+            c = {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',}
+        response = HttpResponse(t.render(c, request))
 
     return response
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
