@@ -4,6 +4,7 @@ from django.conf import settings
 from rakumo.models import FileNameModel
 import sys, os
 import datetime
+from django.template import Context, loader
 from pytz import timezone
 #sys.path.append('/var/www/html/mysite/rakumo/libs/')
 #sys.path.append('/var/www/html/mysite/rakumo/')
@@ -96,19 +97,31 @@ def form(request):
             ruProcess(path)
             loging.debug('postType user output end')
         except forms.ValidationError as e:
-            return render(request, 'rakumo/form.html', {
-            'error_message': e.args[0], 
+            #return render(request, 'rakumo/form.html', {
+            #'error_message': e.args[0],
+            #})
+            t = loader.get_template('rakumo/form.html')
+            c = Context({
+                'error_message': e.args[0],
             })
+            response = HttpResponse(t.render(c))
         except KeyError as e:
-            return render(request, 'rakumo/form.html', {
-            'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',
+            #return render(request, 'rakumo/form.html', {
+            #'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',
+            #})
+            t = loader.get_template('rakumo/form.html')
+            c = Context({
+                'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',
             })
+            response = HttpResponse(t.render(c))
 
-    return render(request, 'rakumo/form.html', {
+#    return render(request, 'rakumo/form.html', {
+#            'error_message': '処理完了しました。ご確認ください',
+#            })
+    response['Context'] = {
             'error_message': '処理完了しました。ご確認ください',
-            })
-
-#    return response
+            }
+    return response
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
     print('process_end')
 
