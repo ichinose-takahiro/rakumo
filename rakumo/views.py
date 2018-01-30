@@ -13,9 +13,12 @@ from .calendarUserList import Process as uProcess
 from .calendarGroupsMemberList import Process as gmProcess
 from .calendarResourceList import Process as rProcess
 from .calendarResourceUpdate import Process as ruProcess
+from .calendarGroupsMemberInsert import Process as gmaProcess
+#from .calendarGroupsMemberUpdate import Process as gmuProcess
 from .loginglibrary import init
 from django import forms
-UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
+UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/upload/'
+DOWNLOAD_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
 # Create your views here.
 #from django.http import HttpResponse
@@ -63,21 +66,21 @@ def form(request):
     if request.POST["postType"] == 'group':
         loging.debug('postType group output start')
         gProcess()
-        response = HttpResponse(open('/var/www/html/mysite/rakumo/static/files/groups.csv', 'rb').read(),
+        response = HttpResponse(open(DOWNLOAD_DIR + 'groups.csv', 'rb').read(),
                             content_type="text/csv")
         response["Content-Disposition"] = "filename=googleGroupsList_" + today + ".csv"
         loging.debug('postType group output end')
     elif request.POST["postType"] == 'groupmem':
         loging.debug('postType groupmem output start')
         gmProcess()
-        response = HttpResponse(open('/var/www/html/mysite/rakumo/static/files/groupMember.csv', 'rb').read(),
+        response = HttpResponse(open(DOWNLOAD_DIR + 'groupMember.csv', 'rb').read(),
                                 content_type="text/csv")
         response["Content-Disposition"] = "filename=googleGroupMemberList_" + today + ".csv"
         loging.debug('postType groupmem output end')
     elif request.POST["postType"] == 'resource':
         loging.debug('postType resource output start')
         rProcess()
-        response = HttpResponse(open('/var/www/html/mysite/rakumo/static/files/resource.csv', 'rb').read(),
+        response = HttpResponse(open(DOWNLOAD_DIR + 'resource.csv', 'rb').read(),
                                 content_type="text/csv")
         response["Content-Disposition"] = "filename=googleResourceList_" + today + ".csv"
         loging.debug('postType resource output end')
@@ -85,41 +88,69 @@ def form(request):
     elif request.POST["postType"] == 'user':
         loging.debug('postType user output start')
         uProcess()
-        response = HttpResponse(open('/var/www/html/mysite/rakumo/static/files/user.csv', 'rb').read(),
+        response = HttpResponse(open(DOWNLOAD_DIR + 'user.csv', 'rb').read(),
                             content_type="text/csv")
         response["Content-Disposition"] = "filename=googleUsersList_" + today + ".csv"
         loging.debug('postType user output end')
 
     elif request.POST["postType"] == 'resourceUpdate':
+        t = loader.get_template('rakumo/form.html')
         try:
             loging.debug('postType resource update start')
             path = upload(request)
             ruProcess(path)
-            loging.debug('postType user output end')
-            t = loader.get_template('rakumo/form.html')
-            c = {
-               'info_message': '処理完了しました。ご確認ください',
-            }
-            response = HttpResponse(t.render(c, request))
+            loging.debug('postType resource output end')
+            c = {'info_message': '処理完了しました。ご確認ください',}
         except forms.ValidationError as e:
-            t = loader.get_template('rakumo/form.html')
-            c = {
-               'error_message': e.args[0],
-            }
-            response = HttpResponse(t.render(c, request))
-            loging.debug(vars(response))
-            #return HttpResponse(t.render(c, request))
-            #loging.debug(vars(response))
+            c = {'error_message': e.args[0],}
         except KeyError as e:
-            t = loader.get_template('rakumo/form.html')
-            c = {
-                'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',
-            }
-            response = HttpResponse(t.render(c, request))
+            c = {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',}
+        response = HttpResponse(t.render(c, request))
+    elif request.POST["postType"] == 'groupmemAdd':
+        t = loader.get_template('rakumo/form.html')
+        try:
+            loging.debug('postType groupmem add start')
+            path = upload(request)
+            gmaProcess(path)
+            loging.debug('postType groupmem add end')
+            c = {'info_message': '処理完了しました。ご確認ください',}
+        except forms.ValidationError as e:
+            c = {'error_message': e.args[0],}
+        except KeyError as e:
+            c = {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',}
+
+        response = HttpResponse(t.render(c, request))
+    elif request.POST["postType"] == 'resourceTmp':
+        response = HttpResponse(open(DOWNLOAD_DIR + 'resourceListTmp.csv', 'rb').read(),
+                                content_type="text/csv")
+        response["Content-Disposition"] = "filename=resourceListTmp.csv"
+        loging.debug('postType resource output end')
+
+    elif request.POST["postType"] == 'groupmemTmp':
+        loging.debug('postType resource output start')
+        rProcess()
+        response = HttpResponse(open(DOWNLOAD_DIR + 'groupmenberInsertTmp.csv', 'rb').read(),
+                                content_type="text/csv")
+        response["Content-Disposition"] = "filename=groupmenberInsertTmp.csv"
+        loging.debug('postType resource output end')
+
+
+    #elif request.POST["postType"] == 'groupmemUpdate':
+    #    t = loader.get_template('rakumo/form.html')
+    #    try:
+    #        loging.debug('postType groupmem update start')
+    #        path = upload(request)
+    #        gmaProcess(path)
+    #        loging.debug('postType groupmem update end')
+    #        c = {'info_message': '処理完了しました。ご確認ください',}
+    #    except forms.ValidationError as e:
+    #        c = {'error_message': e.args[0],}
+    #    except KeyError as e:
+    #        c = {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',}
+    #    response = HttpResponse(t.render(c, request))
 
     return response
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
-    print('process_end')
 
 
     #insert_data = FileNameModel(file_name = file.name)
@@ -136,7 +167,9 @@ def complete(request):
 def upload(request):
 
     file = request.FILES['file']
-    path = os.path.join(UPLOADE_DIR, file.name)
+    filename, ext = os.path.splitext(file.name)
+    today = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
+    path = os.path.join(UPLOADE_DIR, filename,'_' + today, ext)
     loging.debug(path)
     destination = open(path, 'wb')
 
