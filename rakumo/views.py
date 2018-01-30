@@ -128,7 +128,6 @@ def form(request):
 
     elif request.POST["postType"] == 'groupmemTmp':
         loging.debug('postType resource output start')
-        rProcess()
         response = HttpResponse(open(DOWNLOAD_DIR + 'groupmenberInsertTmp.csv', 'rb').read(),
                                 content_type="text/csv")
         response["Content-Disposition"] = "filename=groupmenberInsertTmp.csv"
@@ -169,7 +168,7 @@ def upload(request):
     file = request.FILES['file']
     filename, ext = os.path.splitext(file.name)
     today = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
-    path = os.path.join(UPLOADE_DIR, filename,'_' + today, ext)
+    path = os.path.join(UPLOADE_DIR, filename + '_' + today + ext)
     loging.debug(path)
     destination = open(path, 'wb')
 
