@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect
-from django.template.context_processors import csrf
-from django.conf import settings
-from rakumo.models import FileNameModel
+#from django.template.context_processors import csrf
+#from django.conf import settings
+#from rakumo.models import FileNameModel
 import sys, os
 import datetime
-from django.template import Context, loader
+#from django.template import Context, loader
 from pytz import timezone
 #sys.path.append('/var/www/html/mysite/rakumo/libs/')
 #sys.path.append('/var/www/html/mysite/rakumo/')
@@ -60,7 +60,8 @@ def form(request):
 
     #for chunk in file.chunks():
     #    destination.write(chunk)
-
+    response = None
+    rform = 'rakumo/form.html'
 
     print('process_start')
     if request.POST["postType"] == 'group':
@@ -100,12 +101,11 @@ def form(request):
             path = upload(request)
             ruProcess(path)
             loging.debug('postType resource output end')
-            c = {'info_message': '処理完了しました。ご確認ください',}
+            response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
         except forms.ValidationError as e:
-            c = {'error_message': e.args[0],}
+            response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:
-            c = {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',}
-        response = HttpResponse(t.render(c, request))
+            response = render(request, rform, {'error_message': e.args[0]})
     elif request.POST["postType"] == 'groupmemAdd':
         t = loader.get_template('rakumo/form.html')
         try:
@@ -113,13 +113,11 @@ def form(request):
             path = upload(request)
             gmaProcess(path)
             loging.debug('postType groupmem add end')
-            c = {'info_message': '処理完了しました。ご確認ください',}
+            response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
         except forms.ValidationError as e:
-            c = {'error_message': e.args[0],}
+            response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:
-            c = {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',}
-
-        response = HttpResponse(t.render(c, request))
+            response = render(request, rform, {'error_message': e.args[0]})
     elif request.POST["postType"] == 'resourceTmp':
         response = HttpResponse(open(DOWNLOAD_DIR + 'resourceListTmp.csv', 'rb').read(),
                                 content_type="text/csv")
@@ -139,12 +137,11 @@ def form(request):
             path = upload(request)
             gmdProcess(path)
             loging.debug('postType groupmem update end')
-            c = {'info_message': '処理完了しました。ご確認ください',}
+            response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
         except forms.ValidationError as e:
-             c = {'error_message': e.args[0],}
+            response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:
-            c = {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。',}
-        response = HttpResponse(t.render(c, request))
+            response =  render(request, rform, {'error_message': e.args[0]})
 
     return response
     #request = HttpResponse('/var/www/html/mysite/rakumo/static/files/groups.csv', content_type="text/csv")
