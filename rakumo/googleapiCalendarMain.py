@@ -15,7 +15,7 @@ import datetime
 import codecs
 import os
 from pytz import timezone
-from .loginglibrary import init
+from loginglibrary import init
 
 logging = init('calendarMain')
 
@@ -278,26 +278,30 @@ def createEvent(clData):
         resData = None
     # タイトル設定
     EVENT = {'summary': clData['SUMMARY']}
+    eventStartDate = (clData['STARTDATE'][0:10]).replace('/','-')
+    eventEndDate = (clData['ENDDATE'][0:10]).replace('/','-')
     # 終日の場合は時間を設定しない
     if clData['SCD_DAILY'] == STR_ONE:
         # 開始日設定
-        EVENT['start'] = {'date': clData['STARTDATE'][0:10]}
+        EVENT['start'] = {'date': eventStartDate}
         # 終了日設定1日足す
-        eventEndDate = clData['ENDDATE'][0:10]
+        #eventEndDate = clData['ENDDATE'][0:10]
         if clData['STARTDATE'][0:10] == eventEndDate:
-            eventEndDate = str(datetime.datetime.strptime(eventEndDate,'%Y-%m-%d') + datetime.timedelta(days=1))[0:10]
+            #eventEndDate = eventEndDate.replace('/', '-')
+            eventEndDate = str(datetime.datetime.strptime(eventEndDate,"%Y-%m-%d") + datetime.timedelta(days=1))[0:10]
         EVENT['end'] = {'date': eventEndDate}
     else:
         # 開始日設定
         EVENT['start'] = {
             # 'dateTime': '2014-05-26T13:00:00%s' % GMT_OFF,
-            'dateTime': clData['STARTDATE'][0:10] + 'T' + clData['STARTDATE'][11:19] + GMT_OFF,
+            #'dateTime': clData['STARTDATE'][0:10] + 'T' + clData['STARTDATE'][11:19] + GMT_OFF,
+            'dateTime': eventStartDate + 'T' + clData['STARTDATE'][11:19] + GMT_OFF,
             'timeZone': GMT_PLACE
         }
         # 終了日設定
         EVENT['end'] = {
             # 'dateTime': '2014-05-26T14:00:00%s' % GMT_OFF,
-            'dateTime': clData['ENDDATE'][0:10] + 'T' + clData['ENDDATE'][11:19] + GMT_OFF,
+            'dateTime': eventEndDate + 'T' + clData['ENDDATE'][11:19] + GMT_OFF,
             'timeZone': GMT_PLACE
         }
     # 詳細設定 詳細と備考をくっつける
@@ -465,6 +469,7 @@ def main():
                         #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
                         #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL = ' + EVENT['enddate']
                         #メールアドレスがないやつがあるので、取得せなならん
+                        logging.debug(EVENT)
                         ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                         #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                         logging.debug(ref)
@@ -506,7 +511,7 @@ def main():
         logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
         logging.debug('ERROR END')
 
-    logging.debug('calendarMigration END')
+    logging.debug('calendarMigration END count:'+str(cnt))
     logging.debug('noUseCnt:' + str(noUseCnt))
     logging.debug('noMigCnt:' + str(noMigCnt))
 
