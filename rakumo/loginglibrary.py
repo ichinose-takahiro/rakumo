@@ -1,6 +1,6 @@
 from logging.handlers import TimedRotatingFileHandler
 import logging
-
+import os
 loggers = {}
 
 def init(name=None):
@@ -11,12 +11,13 @@ def init(name=None):
     if loggers.get(name):
         return loggers.get(name)
 
+    os.environ['TZ'] = 'Asia/Tokyo'
     logger = None
     # ルートロガーを取得
     logger = logging.getLogger(name)
 
     # フォーマッターを作成
-    formatter = logging.Formatter('%(asctime)s %(name)s %(funcName)s [%(levelname)s]: %(message)s')
+    formatter = logging.Formatter('%(asctime)s %(name)s %(funcName)s [%(levelname)s]: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
     # ハンドラーを作成しフォーマッターを設定
     handler = TimedRotatingFileHandler(
