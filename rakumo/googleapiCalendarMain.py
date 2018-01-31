@@ -7,11 +7,13 @@ from __future__ import print_function
 from apiclient.discovery import build
 from httplib2 import Http
 from oauth2client import file, client, tools
+from oauth2client.file import Storage
 import csv
 import json
 import sys
 import datetime
 import codecs
+import os
 from pytz import timezone
 from .loginglibrary import init
 
@@ -408,7 +410,13 @@ def main():
         flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
     except ImportError:
         flags = None
-    store = file.Storage('storage.json')
+    home_dir = os.path.expanduser('~')
+    credential_dir = os.path.join(home_dir, '.credentials')
+    if not os.path.exists(credential_dir):
+        os.makedirs(credential_dir)
+    credential_path = os.path.join(credential_dir,
+                                   'python-quickstart.json')
+    store = Storage(credential_path)
     creds = store.get()
     if not creds or creds.invalid:
         flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
