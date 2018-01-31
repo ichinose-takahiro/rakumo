@@ -12,15 +12,27 @@ import json
 import sys
 import datetime
 import codecs
+from pytz import timezone
+from .loginglibrary import init
+
+logging = init('calendarMain')
 
 "固定値の設定"
-WORKDIR = '/var/www/html/googleapi'
-USERCSV = WORKDIR + '/data/user.csv'
-USEREXCSV = WORKDIR + '/data/userUnique.csv'
-USERNOCSV = WORKDIR + '/data/userNotMigration.csv'
-RESOURCE = WORKDIR + '/data/resource.csv'
-HOLIDAY = WORKDIR + '/data/holiday.csv'
-CALENDARCSV = WORKDIR + '/data/groupSessionData.csv'
+WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
+USERCSV = WORKDIR + 'user.csv'
+USEREXCSV = WORKDIR + 'userUnique.csv'
+USERNOCSV = WORKDIR + 'userNotMigration.csv'
+RESOURCE = WORKDIR + 'resource.csv'
+HOLIDAY = WORKDIR + 'holiday.csv'
+CALENDARCSV = WORKDIR + 'groupSessionData.csv'
+CLIENT_SECRET_FILE = './json/client_secret.json'
+SCOPES = 'https://www.googleapis.com/auth/calendar'
+TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
+WORKLOG = WORKDIR + 'calendarList_'+TODAY+'.csv'
+DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'transparency',
+           'creator', 'organizer', 'start', 'end', 'recurrence', 'visibility', 'iCalUID', 'sequence', 'attendees',
+           'extendedProperties', 'reminders', 'overrides']
+
 STR_T = 'T'
 GMT_OFF = '+09:00'  # ET/MST/GMT-4
 GMT_PLACE = 'Asia/Tokyo'
@@ -344,11 +356,7 @@ def createEvent(clData):
     endDate = clData['ENDDATE'][0:10].replace('-','')
     #EVENT['enddate'] = ''
     startTime = clData['STARTDATE'][11:19].replace(':','')
-    EVENT['recurrence'] = [  # 繰り返し
-#            "EXDATE;TZID=%s:" % GMT_PLACE +getHolidayData(clData['STARTDATE'][11:19].replace(':','')), # 排除日※主に休日
-#            "RDATE;TZID=%s:20150601T130000,20150611T130000" % GMT_PLACE, # 追加日※振り返られた日
-#            "RRULE:FREQ=MONTHLY;BYDAY=MO;INTERVAL=1;UNTIL=20160628", # 繰り返し設定
-    ]
+    EVENT['recurrence'] = [ ]
     ## 繰り返しデータのチェック
     if checkExData(clData) == True:
         EVENT['recurrence'].append("EXDATE;TZID=%s:" % GMT_PLACE +getHolidayData(startTime))
@@ -388,37 +396,7 @@ def createEvent(clData):
             #EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEALY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1'
             EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEALY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1;UNTIL=' + endDate
 
-        #EVENT['enddate'] = endDate
-
-        ## EVENT = {
-    ##        'summary': 'Buy candy',  # タイトル
-    ##     'start': {'dateTime': '2014-05-26T13:00:00%s' % GMT_OFF,
-    ##               'timeZone': '%s' % GMT_PLACE},  # 開始日、開始時間
-    ##     'end': {'dateTime': '2014-05-26T14:00:00%s' % GMT_OFF,
-    ##             'timeZone': 'Asia/Tokyo'},  # 終了日、終了時間
-    ##     #        'start':{'date':'2014-05-26'},
-    ##     #        'end':{'date':'2015-05-26'},
-    ##     "description": "test",  # 詳細
-    ##     "colorId": "2",  # 色
-    ##     "attendees": [{'email': 'ichinose-takahiro@919.jp'},
-    ##                   {'email': '919.jp_353739393539393532@resource.calendar.google.com'}],  # 参加者、会議室
-    ##     "recurrence": [  # 繰り返し
-    ##         "EXDATE;TZID=%s:20150608T130000" % GMT_PLACE,
-    ##         "RDATE;TZID=%s:20150609T130000,20150611T130000" % GMT_PLACE,
-    ##         "RRULE:FREQ=MONTHLY;BYDAY=MO;INTERVAL=1;UNTIL=20160628",
-    ##     ],
-    ## }
-
     return EVENT
-def printLog(ref):
-    u""" printLog
-    作成ログを保存する
-    :param ref:
-    :return:
-    """
-    print(ref)
-    # ファイル設定
-    #w.writerow(ref)
 
 def main():
     u""" main メイン処理
@@ -430,18 +408,16 @@ def main():
         flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
     except ImportError:
         flags = None
-    SCOPES = 'https://www.googleapis.com/auth/calendar'
     store = file.Storage('storage.json')
     creds = store.get()
     if not creds or creds.invalid:
-        flow = client.flow_from_clientsecrets('../json/client_secret.json', SCOPES)
+        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
         creds = tools.run_flow(flow, store, flags) \
               if flags else tools.run(flow, store)
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
 
-    dictkey = ['kind','etag','id','status','htmlLink','created','updated','summary','description','transparency','creator','organizer','start','end','recurrence','visibility','iCalUID','sequence','attendees','extendedProperties','reminders','overrides']
-    csvf = codecs.open('/var/www/html/googleapi/data/calendarList_3.csv', 'w')
-    w = csv.DictWriter(csvf, dictkey)  # キーの取得
+    csvf = codecs.open(WORKLOG, 'w')
+    w = csv.DictWriter(csvf, DICTKEY)  # キーの取得
     w.writeheader()  # ヘッダー書き込み
 
     # カレンダーデータを取得
@@ -481,9 +457,9 @@ def main():
                         #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
                         #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL = ' + EVENT['enddate']
                         #メールアドレスがないやつがあるので、取得せなならん
-                        #e = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-                        ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-                        printLog(ref)
+                        ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
+                        #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
+                        logging.debug(ref)
                         w.writerow(ref)
                         EVENT = createEvent(clData)
                 else:
@@ -493,15 +469,15 @@ def main():
             else:
                 # 移行対象ではないユーザ
                 if memData['useFlg'] == False:
-                    print('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + sid + '] SCE_SID[' + eid + '] SCD_GRP_SID[' + gid + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                    logging.debug('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + sid + '] SCE_SID[' + eid + '] SCD_GRP_SID[' + gid + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
                     noUseCnt = noUseCnt + 1
                 # 移行できなかったユーザー
                 elif memData['retFlg'] == False:
-                    print('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + sid + '] SCE_SID[' + eid + '] SCD_GRP_SID[' + gid + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                    logging.debug('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + sid + '] SCE_SID[' + eid + '] SCD_GRP_SID[' + gid + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
                     noMigCnt = noMigCnt + 1
                 else:
-                    print('ERRORMEMDATA=' + memData)
-                    print('ERRORCALDATA=' + clData)
+                    logging.warn('ERRORMEMDATA=' + memData)
+                    logging.warn('ERRORCALDATA=' + clData)
                     raise(ValueError("memDataerror!"))
 
             gid = clData['SCD_GRP_SID']
@@ -513,18 +489,18 @@ def main():
         #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
         #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL=' + EVENT['enddate']
         # 最後の一つは必ず実行する
-        ref = CAL.events().insert(calendarId='ichinose-takahiro@919.jp', conferenceDataVersion=1, sendNotifications=False, body=EVENT).execute()
-        printLog(ref)
+        ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
+        #ref = CAL.events().insert(calendarId='ichinose-takahiro@919.jp', conferenceDataVersion=1, sendNotifications=False, body=EVENT).execute()
+        logging.debug(ref)
         w.writerow(ref)
         progress(cnt-1, len(clList))
     except ValueError as e:
-        print('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
-        print('ERROR END')
+        logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
+        logging.debug('ERROR END')
 
-    print('')
-    print('calendarMigration END')
-    print('noUseCnt:' + str(noUseCnt))
-    print('noMigCnt:' + str(noMigCnt))
+    logging.debug('calendarMigration END')
+    logging.debug('noUseCnt:' + str(noUseCnt))
+    logging.debug('noMigCnt:' + str(noMigCnt))
 
 if __name__ == '__main__':
 

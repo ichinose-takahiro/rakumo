@@ -1,3 +1,4 @@
+WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 # -*- coding: utf-8 -*-
 
 u""" カレンダーのデータを追加するやつや
@@ -12,11 +13,16 @@ import json
 import sys
 import datetime
 import ast
+from .loginglibrary import init
+
+logging = init('calendar')
 
 "固定値の設定"
-WORKDIR = '/var/www/html/googleapi'
-CALENDARCSV = WORKDIR + '/data/calendarList_0.csv'
+WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
+CALENDARCSV = WORKDIR + 'calendarLog.csv'
 DELETESTRING = 'https://www.google.com/calendar/event?eid='
+CLIENT_SECRET_FILE = './json/client_secret.json'
+SCOPES = 'https://www.googleapis.com/auth/calendar'
 
 def getCalendarData():
     u"""getmemberData メンバーデータを取得する処理
@@ -74,22 +80,23 @@ def main():
         flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
     except ImportError:
         flags = None
-    SCOPES = 'https://www.googleapis.com/auth/calendar'
     store = file.Storage('storage.json')
     creds = store.get()
     if not creds or creds.invalid:
-        flow = client.flow_from_clientsecrets('../json/client_secret.json', SCOPES)
+        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
         creds = tools.run_flow(flow, store, flags) \
               if flags else tools.run(flow, store)
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
 
+    logging.debug('------calendarDataDelete start------')
     for event in getCalendarData():
         try:
-            print(event)
             ref = CAL.events().delete(calendarId=event['organizer'], eventId=event['id']).execute()
-            print(ref)
+            logging.debug(ref)
         except Exception as e:
-            print(format(e))
+            logging.debug(format(e))
+
+    logging.debug('------calendarDataDelete end------')
 
 if __name__ == '__main__':
 
