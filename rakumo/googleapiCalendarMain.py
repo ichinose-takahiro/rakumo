@@ -130,7 +130,7 @@ def getMemberAddress(data):
     ret = {'name': membarName, 'priName': priName, 'retFlg': False, 'useFlg':True}
     ret = checkUseName(ret)
     if ret['useFlg'] == True:
-        #ret = checkExName(ret)
+        ret = checkExName(ret)
         for memberData in getmemberData():
             memberData = json.loads(memberData,encoding='UTF-8')
             if memberData['fullName'] == ret['name']:
@@ -420,7 +420,6 @@ def createEvent(clData):
         if clData['SCE_MONTH_YEARLY'] != STR_ZERO and clData['SCE_DAY_YEARLY'] != STR_ZERO:
             #EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEALY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1'
             EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEALY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1;UNTIL=' + endDate
-
     return EVENT
 
 def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
@@ -517,7 +516,8 @@ def main():
                         EVENT['attendees'].append({'email': resAddress})
                     cnt = cnt + 1
                     continue
-                elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']:
+                #elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']
+                elif checkExData(clData) == True and clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']:
                     EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('/','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
                     #enddate = clData['ENDDATE'][0:10].replace('-','')
                     #if int(EVENT['enddate']) < int(enddate):
