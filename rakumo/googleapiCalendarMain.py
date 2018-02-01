@@ -22,6 +22,7 @@ from apiclient.http import BatchHttpRequest
 
 logging = init('calendarMain')
 batchcount = 0
+batch = None
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
@@ -39,7 +40,9 @@ DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'su
            'creator', 'organizer', 'start', 'end', 'recurrence', 'visibility', 'iCalUID', 'sequence', 'attendees',
            'extendedProperties', 'reminders', 'overrides']
 #HEADER = {'Content-Type': 'multipart/mixed; boundary=BOUNDARY'}
-
+csvf = codecs.open(WORKLOG, 'w')
+writeObj = csv.DictWriter(csvf, DICTKEY)  # キーの取得
+writeObj.writeheader()  # ヘッダー書き込
 
 STR_T = 'T'
 GMT_OFF = '+09:00'  # ET/MST/GMT-4
@@ -420,30 +423,37 @@ def createEvent(clData):
 
     return EVENT
 
-def bachExecute(EVENT, service, calendarId, http, batch):
+def bachExecute(EVENT, service, calendarId, http):
     global batchcount
-
-    if batchcount <= 0:
+    global batch
+    if batch is None:
         batch = service.new_batch_http_request(callback=insert_calendar)
-
+    logging.debug('-----batchpara-------')
+    logging.debug(vars(batch))
     if batchcount < 5:
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
+        logging.debug(str(batchcount))
 
     if batchcount >= 5:
+        logging.debug('batchexecute-------before---------------------')
         response = batch.execute(http=http)
+        batch = service.new_batch_http_request(callback=insert_calendar)
+        logging.debug('batchexecute-------after---------------------')
         batchcount = 0
         return response
 
 def insert_calendar(request_id, response, exception):
     logging.debug('callback')
-    if exception is not None:
-        logging.debug('request_id:'+str(request_id) + ' response:' + response )
+    global writeObj
+    if exception is None:
+        logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
+        writeObj.writerow(response)
         pass
     else:
         # Do something with the response
-        logging.debug('exception:' + exception)
-        raise(exception)
+        #logging.debug('exception:' + exception)
+        raise(Exception(exception))
     return response
 
 @jit
@@ -471,9 +481,9 @@ def main():
               if flags else tools.run(flow, store)
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
 
-    csvf = codecs.open(WORKLOG, 'w')
-    w = csv.DictWriter(csvf, DICTKEY)  # キーの取得
-    w.writeheader()  # ヘッダー書き込み
+    #csvf = codecs.open(WORKLOG, 'w')
+    #w = csv.DictWriter(csvf, DICTKEY)  # キーの取得
+    #w.writeheader()  # ヘッダー書き込み
 
     # カレンダーデータを取得
     clList= getGroupSessionList()
@@ -484,7 +494,8 @@ def main():
     cnt = 0
     noUseCnt = 0
     noMigCnt = 0
-    batch = CAL.new_batch_http_request(callback=insert_calendar)
+    #global batch
+    #batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
     for clData in clList:
         clData = json.loads(clData,encoding='UTF-8')
@@ -512,12 +523,13 @@ def main():
                     #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
                     #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL = ' + EVENT['enddate']
                     #メールアドレスがないやつがあるので、取得せなならん
-                    logging.debug(EVENT)
+                    #logging.debug(EVENT)
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-                    ref = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), batch)
-                    logging.debug(ref)
-                    w.writerow(ref)
+                    batch = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
+                    logging.debug('------------------------------')
+                    #logging.debug()
+                    #w.writerow(ref)
                     EVENT = createEvent(clData)
             else:
                 #初回データの取得
@@ -544,6 +556,7 @@ def main():
     #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
     #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL=' + EVENT['enddate']
     # 最後の一つは必ず実行する
+    logging.debug('------------end----------------')
     ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
     #ref = CAL.events().insert(calendarId='ichinose-takahiro@919.jp', conferenceDataVersion=1, sendNotifications=False, body=EVENT).execute()
     logging.debug(ref)
