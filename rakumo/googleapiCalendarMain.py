@@ -429,7 +429,8 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     if batch is None:
         batch = service.new_batch_http_request(callback=insert_calendar)
     logging.debug('-----batchpara-------')
-    logging.debug(vars(batch))
+    #logging.debug(vars(batch))
+    logging.debug(EVENT)
     if batchcount < 50:
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
