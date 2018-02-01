@@ -14,13 +14,13 @@ import sys
 import datetime
 import ast
 import os
-from .loginglibrary import init
+from loginglibrary import init
 
 logging = init('calendar')
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
-CALENDARCSV = WORKDIR + 'calendarLog.csv'
+CALENDARCSV = WORKDIR + 'calendarList.csv'
 DELETESTRING = 'https://www.google.com/calendar/event?eid='
 CLIENT_SECRET_FILE = './json/client_secret.json'
 SCOPES = 'https://www.googleapis.com/auth/calendar'

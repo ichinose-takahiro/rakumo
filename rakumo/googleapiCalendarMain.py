@@ -14,6 +14,8 @@ import sys
 import datetime
 import codecs
 import os
+import argparse
+from numba import jit
 from pytz import timezone
 from loginglibrary import init
 
@@ -80,6 +82,7 @@ def getNotMigrationData():
     memberData = csvToJson(USERNOCSV)
     return memberData
 
+@jit
 def checkExName(ret):
     u"""checkExName 名前が特殊なユーザー名を変更する処理
     :param ret: 対象データ
@@ -92,6 +95,7 @@ def checkExName(ret):
 
     return ret
 
+@jit
 def checkUseName(ret):
     u"""checkUseName 名前が特殊なユーザー名を変更する処理
     :param ret: 対象データ
@@ -104,6 +108,7 @@ def checkUseName(ret):
 
     return ret
 
+@jit
 def getMemberAddress(data):
     u"""getMemberAddress メンバーメールアドレス取得
     カレンダーデータからメンバーデータをチェックしてアドレスを抽出します
@@ -138,6 +143,7 @@ def getResource():
     """
     resourceData = csvToJson(RESOURCE)
     return resourceData
+@jit
 def getResourceAddress(data):
     u""" getResourceAddress 会議室メールアドレス取得
     カレンダーデータから会議室データをチェックしてアドレスを抽出します
@@ -158,6 +164,7 @@ def getcalendarData():
     """
     calendarData = csvToJson(CALENDARCSV)
     return calendarData
+@jit
 def getHolidayData(timedata):
     u""" getHolidayData 祝日データを取得
     CSVの祝日データからAPI実行用の文字列に変換して取得します。
@@ -182,6 +189,7 @@ def getGroupSessionList():
     """
     calendarList = csvToJson(CALENDARCSV)
     return calendarList
+
 def csvToJson(csvData):
     u""" csvToJson CSVを読み込みJSON化する
     CSVファイルを読み込みJSONデータにして返します
@@ -194,6 +202,7 @@ def csvToJson(csvData):
             line_json = json.dumps(line, ensure_ascii=False)
             jsonData.append(line_json)
     return jsonData
+@jit
 def checkExData(clData):
     u""" checkExData 繰り返しデータの存在チェック
     カレンダーデータが繰り返し登録するデータかをチェックします。
@@ -215,6 +224,7 @@ def checkExData(clData):
             clData['SCE_DAY_YEARLY'] != STR_ZERO:
             ret = True
     return ret
+@jit
 def setExWeekly(clData):
     u""" setExWeekly 週ごとの設定を取得する
     カレンダーデータから、googleAPIに実行できる繰り返しデータを取得します。
@@ -250,6 +260,7 @@ def setExWeekly(clData):
         if bydayFlg == True: byday = byday + ','
         byday = byday + getWeeklyByDay(clData) + 'SA'
     return byday
+@jit
 def getWeeklyByDay(clData):
     u""" getWeeklyByDay 何週目の繰り返しかの値取得する処理
     毎月登録時の何週目に連続登録するかを設定します
@@ -263,6 +274,7 @@ def getWeeklyByDay(clData):
 def progress(p, l):
     sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
     sys.stdout.flush()
+@jit
 def createEvent(clData):
     u""" createEvent カレンダー入力データを作成
     カレンダーデータからGoogleAPIで実行するためのパラメータを設定する
@@ -403,17 +415,17 @@ def createEvent(clData):
             EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEALY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1;UNTIL=' + endDate
 
     return EVENT
-
+@jit
 def main():
     u""" main メイン処理
     メインで実行する処理
     :return: なし
     """
-    try:
-        import argparse
-        flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-    except ImportError:
-        flags = None
+    #try:
+    #import argparse
+    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+    #except ImportError:
+    #    flags = None
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
     if not os.path.exists(credential_dir):
@@ -441,64 +453,61 @@ def main():
     cnt = 0
     noUseCnt = 0
     noMigCnt = 0
-    try:
-        for clData in clList:
-            clData = json.loads(clData,encoding='UTF-8')
-            memData = getMemberAddress(clData)
-            if memData['retFlg'] == True and memData['useFlg'] == True:
-                # 同じグループのデータを取得してまとめて登録する
-                if EVENT != [] :
-                    if gid == clData['SCD_GRP_SID'] and clData['SCD_GRP_SID'] != '-1':
-                        if {'email': memData['email']} not in EVENT['attendees']:
-                            EVENT['attendees'].append({'email': memData['email']})
-                        # resourceDataのチェックと挿入
-                        resAddress = getResourceAddress(clData)
-                        if {'email': resAddress} not in EVENT['attendees']:
-                            EVENT['attendees'].append({'email': resAddress})
-                        cnt = cnt + 1
-                        continue
-                    elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']:
-                        EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('-','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
-
-                        #enddate = clData['ENDDATE'][0:10].replace('-','')
-                        #if int(EVENT['enddate']) < int(enddate):
-                        #    EVENT['enddate'] = enddate
-                        cnt = cnt + 1
-                        continue
-                    else:
-                        #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
-                        #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL = ' + EVENT['enddate']
-                        #メールアドレスがないやつがあるので、取得せなならん
-                        logging.debug(EVENT)
-                        ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-                        #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-                        logging.debug(ref)
-                        w.writerow(ref)
-                        EVENT = createEvent(clData)
+    #try:
+    for clData in clList:
+        clData = json.loads(clData,encoding='UTF-8')
+        memData = getMemberAddress(clData)
+        if memData['retFlg'] == True and memData['useFlg'] == True:
+            # 同じグループのデータを取得してまとめて登録する
+            if EVENT != [] :
+                if gid == clData['SCD_GRP_SID'] and clData['SCD_GRP_SID'] != '-1':
+                    if {'email': memData['email']} not in EVENT['attendees']:
+                        EVENT['attendees'].append({'email': memData['email']})
+                    # resourceDataのチェックと挿入
+                    resAddress = getResourceAddress(clData)
+                    if {'email': resAddress} not in EVENT['attendees']:
+                        EVENT['attendees'].append({'email': resAddress})
+                    cnt = cnt + 1
+                    continue
+                elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']:
+                    EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('-','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
+                    #enddate = clData['ENDDATE'][0:10].replace('-','')
+                    #if int(EVENT['enddate']) < int(enddate):
+                    #    EVENT['enddate'] = enddate
+                    cnt = cnt + 1
+                    continue
                 else:
-                    #初回データの取得
+                    #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
+                    #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL = ' + EVENT['enddate']
+                    #メールアドレスがないやつがあるので、取得せなならん
+                    logging.debug(EVENT)
+                    ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
+                    #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
+                    logging.debug(ref)
+                    w.writerow(ref)
                     EVENT = createEvent(clData)
-
             else:
-                # 移行対象ではないユーザ
-                if memData['useFlg'] == False:
-                    logging.debug('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + sid + '] SCE_SID[' + eid + '] SCD_GRP_SID[' + gid + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
-                    noUseCnt = noUseCnt + 1
-                # 移行できなかったユーザー
-                elif memData['retFlg'] == False:
-                    logging.debug('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + sid + '] SCE_SID[' + eid + '] SCD_GRP_SID[' + gid + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
-                    noMigCnt = noMigCnt + 1
-                else:
-                    logging.warn('ERRORMEMDATA=' + memData)
-                    logging.warn('ERRORCALDATA=' + clData)
-                    raise(ValueError("memDataerror!"))
+                #初回データの取得
+                EVENT = createEvent(clData)
 
-            gid = clData['SCD_GRP_SID']
-            eid = clData['SCE_SID']
-            sid = clData['SCD_SID']
-            cnt = cnt + 1
-            progress(cnt-1, len(clList))
-
+        else:
+            # 移行対象ではないユーザ
+            if memData['useFlg'] == False:
+                logging.debug('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + sid + '] SCE_SID[' + eid + '] SCD_GRP_SID[' + gid + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                noUseCnt = noUseCnt + 1
+            # 移行できなかったユーザー
+            elif memData['retFlg'] == False:
+                logging.debug('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + sid + '] SCE_SID[' + eid + '] SCD_GRP_SID[' + gid + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                noMigCnt = noMigCnt + 1
+            else:
+                logging.warn('ERRORMEMDATA=' + memData)
+                logging.warn('ERRORCALDATA=' + clData)
+                raise(ValueError("memDataerror!"))
+        gid = clData['SCD_GRP_SID']
+        eid = clData['SCE_SID']
+        sid = clData['SCD_SID']
+        cnt = cnt + 1
+        progress(cnt-1, len(clList))
         #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
         #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL=' + EVENT['enddate']
         # 最後の一つは必ず実行する
@@ -507,9 +516,9 @@ def main():
         logging.debug(ref)
         w.writerow(ref)
         progress(cnt-1, len(clList))
-    except ValueError as e:
-        logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
-        logging.debug('ERROR END')
+    #except ValueError as e:
+    #    logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
+    #    logging.debug('ERROR END')
 
     logging.debug('calendarMigration END count:'+str(cnt))
     logging.debug('noUseCnt:' + str(noUseCnt))
