@@ -31,7 +31,7 @@ USEREXCSV = WORKDIR + 'userUnique.csv'
 USERNOCSV = WORKDIR + 'userNotMigration.csv'
 RESOURCE = WORKDIR + 'resource.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
-CALENDARCSV = WORKDIR + 'groupSessionData.csv'
+CALENDARCSV = WORKDIR + 'groupSessionData_test.csv'
 CLIENT_SECRET_FILE = './json/client_secret.json'
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
@@ -377,8 +377,8 @@ def createEvent(clData):
 
     # 繰り返し設定。RRULE設定についてはRFC-5545を参考とする
     # https://tools.ietf.org/html/rfc5545
-    startDate = clData['STARTDATE'][0:10].replace('-','')
-    endDate = clData['ENDDATE'][0:10].replace('-','')
+    startDate = clData['STARTDATE'][0:10].replace('/','')
+    endDate = clData['ENDDATE'][0:10].replace('/','')
     #EVENT['enddate'] = ''
     startTime = clData['STARTDATE'][11:19].replace(':','')
     EVENT['recurrence'] = [ ]
@@ -412,10 +412,10 @@ def createEvent(clData):
             if clData['SCE_WEEK'] != STR_ZERO:
                 byday = setExWeekly(clData)
                 #EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=MONTH;' + byday + ';INTERVAL=1'
-                EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=MONTH;' + byday + ';INTERVAL=1;UNTIL=' + endDate
+                EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=MONTHLY;' + byday + ';INTERVAL=1;UNTIL=' + endDate
             else:
                 #EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=MONTH;BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1'
-                EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=MONTH;BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1;UNTIL=' + endDate
+                EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=MONTHLY;BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1;UNTIL=' + endDate
         ##毎年
         if clData['SCE_MONTH_YEARLY'] != STR_ZERO and clData['SCE_DAY_YEARLY'] != STR_ZERO:
             #EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEALY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1'
@@ -518,7 +518,7 @@ def main():
                     cnt = cnt + 1
                     continue
                 elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']:
-                    EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('-','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
+                    EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('/','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
                     #enddate = clData['ENDDATE'][0:10].replace('-','')
                     #if int(EVENT['enddate']) < int(enddate):
                     #    EVENT['enddate'] = enddate
@@ -528,7 +528,7 @@ def main():
                     #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
                     #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL = ' + EVENT['enddate']
                     #メールアドレスがないやつがあるので、取得せなならん
-                    #logging.debug(EVENT)
+                    logging.debug(EVENT)
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
