@@ -540,14 +540,14 @@ def main():
         sid = clData['SCD_SID']
         cnt = cnt + 1
         progress(cnt-1, len(clList))
-        #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
-        #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL=' + EVENT['enddate']
-        # 最後の一つは必ず実行する
-        ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-        #ref = CAL.events().insert(calendarId='ichinose-takahiro@919.jp', conferenceDataVersion=1, sendNotifications=False, body=EVENT).execute()
-        logging.debug(ref)
-        w.writerow(ref)
-        progress(cnt-1, len(clList))
+    #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
+    #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL=' + EVENT['enddate']
+    # 最後の一つは必ず実行する
+    ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
+    #ref = CAL.events().insert(calendarId='ichinose-takahiro@919.jp', conferenceDataVersion=1, sendNotifications=False, body=EVENT).execute()
+    logging.debug(ref)
+    w.writerow(ref)
+    progress(cnt-1, len(clList))
     #except ValueError as e:
     #    logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
     #    logging.debug('ERROR END')
