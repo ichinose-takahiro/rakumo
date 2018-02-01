@@ -514,7 +514,7 @@ def main():
                     logging.debug(EVENT)
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-                    ref = bachExecute(EVENT, memData['pri_email'], CAL, creds.authorize(Http()))
+                    ref = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
                     logging.debug(ref)
                     w.writerow(ref)
                     EVENT = createEvent(clData)
