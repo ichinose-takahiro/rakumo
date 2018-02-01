@@ -18,8 +18,10 @@ import argparse
 from numba import jit
 from pytz import timezone
 from loginglibrary import init
+from apiclient.http import BatchHttpRequest
 
 logging = init('calendarMain')
+batchcount = 0
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
@@ -36,6 +38,8 @@ WORKLOG = WORKDIR + 'calendarList_'+TODAY+'.csv'
 DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'transparency',
            'creator', 'organizer', 'start', 'end', 'recurrence', 'visibility', 'iCalUID', 'sequence', 'attendees',
            'extendedProperties', 'reminders', 'overrides']
+#HEADER = {'Content-Type': 'multipart/mixed; boundary=BOUNDARY'}
+
 
 STR_T = 'T'
 GMT_OFF = '+09:00'  # ET/MST/GMT-4
@@ -415,6 +419,33 @@ def createEvent(clData):
             EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEALY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1;UNTIL=' + endDate
 
     return EVENT
+
+def bachExecute(EVENT, service, calendarId, http):
+    global batchcount
+
+    if batchcount <= 0:
+        batch = service.new_batch_http_request()
+
+    if batchcount < 50:
+        response = batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
+        batchcount = batchcount + 1
+
+    if batchcount >= 50:
+        batch.execute(http=http)
+        batchcount = 0
+
+    return response
+
+def insert_calendar(request_id, response, exception):
+  if exception is not None:
+    logging.debug('request_id:'+str(request_id) + ' response:' + response )
+    pass
+  else:
+    # Do something with the response
+    logging.debug('exception:' + exception)
+    raise(exception)
+  return response
+
 @jit
 def main():
     u""" main メイン処理
@@ -481,8 +512,9 @@ def main():
                     #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL = ' + EVENT['enddate']
                     #メールアドレスがないやつがあるので、取得せなならん
                     logging.debug(EVENT)
-                    ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
+                    #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
+                    ref = bachExecute(EVENT, memData['pri_email'], CAL, creds.authorize(Http()))
                     logging.debug(ref)
                     w.writerow(ref)
                     EVENT = createEvent(clData)
