@@ -443,13 +443,17 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
         batchcount = 0
 
 def insert_calendar(request_id, response, exception):
-    logging.debug('callback')
     global writeObj
     if exception is None:
+        logging.debug('callback----OK-------')
         logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
         writeObj.writerow(response)
         pass
     else:
+        logging.debug('callback----NG-------')
+        logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
+        logging.debug('exception:')
+        logging.debug(vars(exception))
         # Do something with the response
         #logging.debug('exception:' + exception)
         raise(Exception(exception))
