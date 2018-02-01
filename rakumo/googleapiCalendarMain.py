@@ -423,25 +423,24 @@ def createEvent(clData):
 
     return EVENT
 
-def bachExecute(EVENT, service, calendarId, http):
+def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     global batchcount
     global batch
     if batch is None:
         batch = service.new_batch_http_request(callback=insert_calendar)
     logging.debug('-----batchpara-------')
     logging.debug(vars(batch))
-    if batchcount < 5:
+    if batchcount < 50:
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
 
-    if batchcount >= 5:
+    if batchcount >= 50 or lastFlg == True:
         logging.debug('batchexecute-------before---------------------')
-        response = batch.execute(http=http)
+        batch.execute(http=http)
         batch = service.new_batch_http_request(callback=insert_calendar)
         logging.debug('batchexecute-------after---------------------')
         batchcount = 0
-        return response
 
 def insert_calendar(request_id, response, exception):
     logging.debug('callback')
@@ -494,6 +493,7 @@ def main():
     cnt = 0
     noUseCnt = 0
     noMigCnt = 0
+    memData = None
     #global batch
     #batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
@@ -526,7 +526,7 @@ def main():
                     #logging.debug(EVENT)
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-                    batch = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
+                    bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
                     logging.debug('------------------------------')
                     #logging.debug()
                     #w.writerow(ref)
@@ -557,10 +557,12 @@ def main():
     #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL=' + EVENT['enddate']
     # 最後の一つは必ず実行する
     logging.debug('------------end----------------')
-    ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
+    if memData is not None:
+        bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
+    #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
     #ref = CAL.events().insert(calendarId='ichinose-takahiro@919.jp', conferenceDataVersion=1, sendNotifications=False, body=EVENT).execute()
-    logging.debug(ref)
-    w.writerow(ref)
+    #logging.debug(ref)
+    #writeObj.writerow(ref)
     progress(cnt-1, len(clList))
     #except ValueError as e:
     #    logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
