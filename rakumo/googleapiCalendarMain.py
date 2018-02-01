@@ -420,31 +420,31 @@ def createEvent(clData):
 
     return EVENT
 
-def bachExecute(EVENT, service, calendarId, http):
+def bachExecute(EVENT, service, calendarId, http, batch):
     global batchcount
 
     if batchcount <= 0:
-        batch = service.new_batch_http_request()
+        batch = service.new_batch_http_request(callback=insert_calendar)
 
-    if batchcount < 50:
-        response = batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
+    if batchcount < 5:
+        batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
 
-    if batchcount >= 50:
-        batch.execute(http=http)
+    if batchcount >= 5:
+        response = batch.execute(http=http)
         batchcount = 0
-
-    return response
+        return response
 
 def insert_calendar(request_id, response, exception):
-  if exception is not None:
-    logging.debug('request_id:'+str(request_id) + ' response:' + response )
-    pass
-  else:
-    # Do something with the response
-    logging.debug('exception:' + exception)
-    raise(exception)
-  return response
+    logging.debug('callback')
+    if exception is not None:
+        logging.debug('request_id:'+str(request_id) + ' response:' + response )
+        pass
+    else:
+        # Do something with the response
+        logging.debug('exception:' + exception)
+        raise(exception)
+    return response
 
 @jit
 def main():
@@ -484,6 +484,7 @@ def main():
     cnt = 0
     noUseCnt = 0
     noMigCnt = 0
+    batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
     for clData in clList:
         clData = json.loads(clData,encoding='UTF-8')
@@ -514,7 +515,7 @@ def main():
                     logging.debug(EVENT)
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-                    ref = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
+                    ref = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), batch)
                     logging.debug(ref)
                     w.writerow(ref)
                     EVENT = createEvent(clData)
