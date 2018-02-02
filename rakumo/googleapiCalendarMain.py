@@ -419,7 +419,7 @@ def createEvent(clData):
         ##毎年
         if clData['SCE_MONTH_YEARLY'] != STR_ZERO and clData['SCE_DAY_YEARLY'] != STR_ZERO:
             #EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEALY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1'
-            EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEARLY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1;UNTIL=' + endDate
+            EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEARLY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY_YEARLY'] + ';INTERVAL=1;UNTIL=' + endDate
     return EVENT
 
 def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
@@ -498,6 +498,7 @@ def main():
     noUseCnt = 0
     noMigCnt = 0
     memData = None
+    recr_cnt = 0
     #global batch
     #batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
@@ -517,12 +518,13 @@ def main():
                     cnt = cnt + 1
                     continue
                 #elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']
-                elif checkExData(clData) == True and clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']:
+                elif checkExData(clData) == True and clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID'] and recr_cnt <= 30:
                     EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('/','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
                     #enddate = clData['ENDDATE'][0:10].replace('-','')
                     #if int(EVENT['enddate']) < int(enddate):
                     #    EVENT['enddate'] = enddate
                     cnt = cnt + 1
+                    recr_cnt = recr_cnt + 1
                     continue
                 else:
                     #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
@@ -532,6 +534,7 @@ def main():
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
+                    recr_cnt = 0
                     logging.debug('------------------------------')
                     #logging.debug()
                     #w.writerow(ref)
