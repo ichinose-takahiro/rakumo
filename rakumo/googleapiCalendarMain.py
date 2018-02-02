@@ -393,7 +393,7 @@ def createEvent(clData):
             and clData['BYDAY_FR'] == STR_ZERO and clData['BYDAY_SA'] == STR_ZERO and clData['SCE_MONTH_YEARLY'] == STR_ZERO \
             and clData['SCE_DAY_YEARLY'] == STR_ZERO and clData['SCE_DAY'] == STR_ZERO :
             #EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=DAYLY;INTERVAL=1'
-            EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=DAYLY;INTERVAL=1;UNTIL='+ endDate
+            EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=DAILY;INTERVAL=1;UNTIL='+ endDate
         ##毎週
         if clData['SCE_WEEK'] == STR_ZERO \
         and (clData['BYDAY_SU'] != STR_ZERO or clData['BYDAY_MO'] != STR_ZERO or clData['BYDAY_TU'] != STR_ZERO \
