@@ -465,11 +465,12 @@ def delHolidayData(exdate, rdate):
     exdateList = exdatestr.split(',')
     rdatestr = rdate.replace('RDATE;TZID=%s:' % GMT_PLACE, "")
     rdateList = rdatestr.split(',')
-    for date in rdateList:
-        if date in exdateList:
-            exdate = exdate.replace(',' + date, '')
-
-    return exdate
+    rtnExdateList = []
+    for date in exdateList:
+        if date not in rdateList:
+            rtnExdateList.append(date)
+    retunExdate = 'EXDATE;TZID=%s:' % GMT_PLACE + ','.join(rtnExdateList)
+    return retunExdate
 
 @jit
 def main():
@@ -542,7 +543,8 @@ def main():
                     #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
                     #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL = ' + EVENT['enddate']
                     #繰り返しデータより追加するデータから削除対象のデータを取り除く
-                    EVENT['recurrence'][0] = delHolidayData(EVENT['recurrence'][0], EVENT['recurrence'][1])
+                    if 'recurrence' in EVENT.keys() and EVENT['recurrence'] != [ ]:
+                        EVENT['recurrence'][0] = delHolidayData(EVENT['recurrence'][0], EVENT['recurrence'][1])
                     logging.debug(EVENT)
                     #メールアドレスがないやつがあるので、取得せなならん
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
