@@ -460,6 +460,13 @@ def insert_calendar(request_id, response, exception):
     return response
 
 @jit
+def delHolidayData(reccrence, startdate):
+    startTS = startdate[0:10].replace('/', '') + 'T' + startdate[11:19].replace(':', '')
+    reccrence = reccrence.replace(','+ startTS, '')
+
+    return reccrence
+
+@jit
 def main():
     u""" main メイン処理
     メインで実行する処理
@@ -519,6 +526,7 @@ def main():
                     continue
                 #elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']
                 elif checkExData(clData) == True and clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID'] and recr_cnt <= 30:
+                    EVENT['reccrrence'][0] = delHolidayData(EVENT['reccrrence'][0], clData['STARTDATE'])
                     EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('/','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
                     #enddate = clData['ENDDATE'][0:10].replace('-','')
                     #if int(EVENT['enddate']) < int(enddate):
