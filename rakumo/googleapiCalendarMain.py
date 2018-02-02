@@ -460,11 +460,16 @@ def insert_calendar(request_id, response, exception):
     return response
 
 @jit
-def delHolidayData(reccrence, startdate):
-    startTS = startdate[0:10].replace('/', '') + 'T' + startdate[11:19].replace(':', '')
-    reccrence = reccrence.replace(','+ startTS, '')
+def delHolidayData(exdate, rdate):
+    exdatestr = exdate.replace('EXDATE;TZID=%s:' % GMT_PLACE, "")
+    exdateList = exdatestr.split(',')
+    rdatestr = rdate.replace('RDATE;TZID=%s:' % GMT_PLACE, "")
+    rdateList = rdatestr.split(',')
+    for date in rdateList:
+        if date in exdateList:
+            exdate = exdate.replace(',' + date, '')
 
-    return reccrence
+    return exdate
 
 @jit
 def main():
@@ -526,7 +531,6 @@ def main():
                     continue
                 #elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']
                 elif checkExData(clData) == True and clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID'] and recr_cnt <= 30:
-                    EVENT['reccrrence'][0] = delHolidayData(EVENT['reccrrence'][0], clData['STARTDATE'])
                     EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('/','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
                     #enddate = clData['ENDDATE'][0:10].replace('-','')
                     #if int(EVENT['enddate']) < int(enddate):
@@ -537,8 +541,10 @@ def main():
                 else:
                     #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
                     #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL = ' + EVENT['enddate']
-                    #メールアドレスがないやつがあるので、取得せなならん
+                    #繰り返しデータより追加するデータから削除対象のデータを取り除く
+                    EVENT['recurrence'][0] = delHolidayData(EVENT['recurrence'][0], EVENT['recurrence'][1])
                     logging.debug(EVENT)
+                    #メールアドレスがないやつがあるので、取得せなならん
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
