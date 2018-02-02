@@ -509,11 +509,11 @@ def main():
             # 同じグループのデータを取得してまとめて登録する
             if EVENT != [] :
                 if gid == clData['SCD_GRP_SID'] and clData['SCD_GRP_SID'] != '-1':
-                    if {'email': memData['email']} not in EVENT['attendees']:
+                    if {'email': memData['email'],'responseStatus':'accepted'} not in EVENT['attendees']:
                         EVENT['attendees'].append({'email': memData['email']})
                     # resourceDataのチェックと挿入
                     resAddress = getResourceAddress(clData)
-                    if {'email': resAddress} not in EVENT['attendees'] and resAddress is not None:
+                    if {'email': resAddress,'responseStatus':'accepted'} not in EVENT['attendees'] and resAddress is not None:
                         EVENT['attendees'].append({'email': resAddress})
                     cnt = cnt + 1
                     continue
