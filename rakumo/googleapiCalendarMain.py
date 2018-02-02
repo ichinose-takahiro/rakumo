@@ -415,11 +415,11 @@ def createEvent(clData):
                 EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=MONTHLY;' + byday + ';INTERVAL=1;UNTIL=' + endDate
             else:
                 #EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=MONTH;BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1'
-                EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=MONTHLY;BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1;UNTIL=' + endDate
+                EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=MONTHLY;BYMONTHDAY=' + (clData['SCE_DAY'] if clData['SCE_DAY'] != '99' else '-1') + ';INTERVAL=1;UNTIL=' + endDate
         ##毎年
         if clData['SCE_MONTH_YEARLY'] != STR_ZERO and clData['SCE_DAY_YEARLY'] != STR_ZERO:
             #EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEALY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1'
-            EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEARLY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY_YEARLY'] + ';INTERVAL=1;UNTIL=' + endDate
+            EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEARLY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + (clData['SCE_DAY_YEARLY'] if clData['SCE_DAY_YEARLY'] != '99' else '-1') + ';INTERVAL=1;UNTIL=' + endDate
     return EVENT
 
 def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
