@@ -72,6 +72,11 @@ def progress(p, l):
 def bachExecute(EVENT, service, http, lastFlg = None):
     global batchcount
     global batch
+    global okcnt
+    global ngcnt
+    okcnt = 0
+    ngcnt = 0
+
     if batch is None:
         batch = service.new_batch_http_request(callback=delete_calendar)
     logging.debug('-----batchpara-------')
@@ -92,8 +97,8 @@ def delete_calendar(request_id, response, exception):
     global writeObj
     global okcnt
     global ngcnt
-    okcnt = 0
-    ngcnt = 0
+    #okcnt = 0
+    #ngcnt = 0
     if exception is None:
         logging.debug('callback----OK-------')
         logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
@@ -144,7 +149,7 @@ def main():
         creds = tools.run_flow(flow, store, flags) \
               if flags else tools.run(flow, store)
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
-    progressList = {}
+    progressList = []
     for calendarcsv in CALENDARCSVS:
         cnt = 0
         logging.debug(WORKDIR + calendarcsv)
