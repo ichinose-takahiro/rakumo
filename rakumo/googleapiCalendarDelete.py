@@ -26,18 +26,22 @@ batch = None
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 #CALENDARCSV = WORKDIR + 'calendarList.csv'
-CALENDARCSV = WORKDIR + 'calendarList_20180201131347.csv'
 DELETESTRING = 'https://www.google.com/calendar/event?eid='
 CLIENT_SECRET_FILE = './json/client_secret.json'
 SCOPES = 'https://www.googleapis.com/auth/calendar'
+okcnt = 0
+ngcnt = 0
 
+CALENDARCSVS = [
+'calendarList_20180202171826.csv',
+]
 @jit
-def getCalendarData():
+def getCalendarData(calendacsv):
     u"""getmemberData メンバーデータを取得する処理
     CSVからJSONデータを取得します。
     :return: JSONデータ
     """
-    calendarData = csvToJson(CALENDARCSV)
+    calendarData = csvToJson(calendacsv)
     eventidList = []
     for data in calendarData:
         data = json.loads(data, encoding='UTF-8')
@@ -87,10 +91,13 @@ def bachExecute(EVENT, service, http, lastFlg = None):
 
 def delete_calendar(request_id, response, exception):
     global writeObj
+    global okcnt
+    global ngcnt
     if exception is None:
         logging.debug('callback----OK-------')
         logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
         #writeObj.writerow(response)
+        okcnt = okcnt + 1
         pass
     #elif exception['content']['reason'] == 'deleted':
     #    loging.debug('callback----OK-------')
@@ -105,7 +112,8 @@ def delete_calendar(request_id, response, exception):
         if str(exc_content['code']) == '410' and exc_content['errors'][0]['reason'] == 'deleted':
             logging.debug('callback----OK-------')
             logging.debug('request_id:'+str(request_id) + ' reason:deleted' )
-            pass
+            ngcnt = ngcnt + 1
+            pass            
         else:
             logging.debug('callback----NG-------')
             logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
@@ -144,10 +152,13 @@ def main():
         creds = tools.run_flow(flow, store, flags) \
               if flags else tools.run(flow, store)
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
-    cnt = 0
-    clList= getCalendarData()
-    logging.debug('------calendarDataDelete start------')
-    for event in clList:
+    #cnt = 0
+    for calendarcsv in CALENDARCSVS:
+      cnt = 0
+      logging.debug(WORKDIR + calendarcsv)
+      clList= getCalendarData(WORKDIR + calendarcsv)
+      logging.debug('------calendarDataDelete start------')
+      for event in clList:
         #try:
             #ref = CAL.events().delete(calendarId=event['organizer'], eventId=event['id']).execute()
         if(cnt < len(clList) - 1):
@@ -160,8 +171,10 @@ def main():
         cnt = cnt + 1
         progress(cnt-1, len(clList))
 
-    progress(cnt-1, len(clList))
-    logging.debug('------calendarDataDelete end------')
+      progress(cnt-1, len(clList))
+      logging.debug('------calendarDataDelete end------')
+      logging.debug('OK CNT:'+str(okcnt))
+      logging.debug('NG CNT:'+str(ngcnt))
 
 if __name__ == '__main__':
 
