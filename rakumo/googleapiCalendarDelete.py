@@ -33,7 +33,42 @@ okcnt = 0
 ngcnt = 0
 
 CALENDARCSVS = [
-'calendarList_20180202171826.csv',
+#'calendarList_20180131164834.csv',
+#'calendarList_20180131165134.csv',
+#'calendarList_20180131175136.csv', #end
+#'calendarList_20180131185652.csv', #end
+#'calendarList_20180131190202.csv', #end
+#'calendarList_20180201133539.csv', #end
+#'calendarList_20180201140123.csv', #end
+#'calendarList_20180201141441.csv', #end
+#'calendarList_20180201150804.csv', #end
+#'calendarList_20180201151342.csv', #end
+#'calendarList_20180201154603.csv', #end
+#'calendarList_20180201154707.csv', #end
+#'calendarList_20180201154848.csv', #end
+#'calendarList_20180201155158.csv', #end
+#'calendarList_20180201160906.csv', #end
+#'calendarList_20180201161130.csv', #end
+#'calendarList_20180201162219.csv', #end
+#'calendarList_20180201163435.csv', #end
+#'calendarList_20180201163914.csv', #end
+#'calendarList_20180201164337.csv', #end
+#'calendarList_20180201164440.csv', #end
+#'calendarList_20180201164815.csv', #end
+#'calendarList_20180201165311.csv', #end
+#'calendarList_20180201170346.csv', #end
+#'calendarList_20180201170551.csv', #end
+#'calendarList_20180201171225.csv', #end
+#'calendarList_20180201171315.csv', #end
+#'calendarList_20180201171616.csv', #end
+#'calendarList_20180201172137.csv', #end
+#'calendarList_20180201172644.csv', #end
+#'calendarList_20180202110319.csv', #end
+#'calendarList_20180202112739.csv', #end
+'calendarList_20180202113228.csv',
+'calendarList_20180202115103.csv',
+'calendarList_20180202120343.csv',
+'calendarList_20180202130013.csv',
 ]
 @jit
 def getCalendarData(calendacsv):
@@ -74,8 +109,8 @@ def bachExecute(EVENT, service, http, lastFlg = None):
     global batch
     global okcnt
     global ngcnt
-    okcnt = 0
-    ngcnt = 0
+#    okcnt = 0
+#    ngcnt = 0
 
     if batch is None:
         batch = service.new_batch_http_request(callback=delete_calendar)
@@ -93,12 +128,12 @@ def bachExecute(EVENT, service, http, lastFlg = None):
         logging.debug('batchexecute-------after---------------------')
         batchcount = 0
 
+    return okcnt, ngcnt
+
 def delete_calendar(request_id, response, exception):
     global writeObj
     global okcnt
     global ngcnt
-    #okcnt = 0
-    #ngcnt = 0
     if exception is None:
         logging.debug('callback----OK-------')
         logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
@@ -125,6 +160,11 @@ def progress(p, l):
     sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
     sys.stdout.flush()
 
+def init():
+    global okcnt
+    global ngcnt
+    okcnt = 0
+    ngcnt = 0
 @jit
 def main():
     u""" main メイン処理
@@ -151,17 +191,21 @@ def main():
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
     progressList = []
     for calendarcsv in CALENDARCSVS:
+        init()
         cnt = 0
+        _okcnt = 0
+        _ngcnt = 0
         logging.debug(WORKDIR + calendarcsv)
         clList= getCalendarData(WORKDIR + calendarcsv)
         logging.debug('------calendarDataDelete start------')
         for event in clList:
+            logging.debug('LINECNT:'+ str(cnt))
             #try:
                 #ref = CAL.events().delete(calendarId=event['organizer'], eventId=event['id']).execute()
             if(cnt < len(clList) - 1):
-                bachExecute(event, CAL, creds.authorize(Http()))
+                _okcnt, _ngcnt = bachExecute(event, CAL, creds.authorize(Http()))
             else:
-                bachExecute(event, CAL, creds.authorize(Http()),True)
+                _okcnt, _ngcnt = bachExecute(event, CAL, creds.authorize(Http()),True)
             #except Exception as e:
             #    logging.debug(format(e))
 
@@ -171,10 +215,10 @@ def main():
         progress(cnt-1, len(clList))
         logging.debug('------calendarDataDelete end------')
         logging.debug('CSVFILE:' + WORKDIR + calendarcsv)
-        logging.debug('OK CNT:'+str(okcnt))
-        logging.debug('NG CNT:'+str(ngcnt))
+        logging.debug('OK CNT:'+str(_okcnt))
+        logging.debug('NG CNT:'+str(_ngcnt))
 
-        progressList.append('CSVFILE:' + calendarcsv + ' OKCNT:'+str(okcnt) + ' NGCNT:'+str(ngcnt) )
+        progressList.append('CSVFILE:' + calendarcsv + ' OKCNT:'+str(_okcnt) + ' NGCNT:'+str(_ngcnt) )
 
     logging.debug('------FINISH calendarDataDelete------')
     for pdata in progressList:
