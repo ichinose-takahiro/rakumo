@@ -18,6 +18,9 @@ from loginglibrary import init
 from apiclient.http import BatchHttpRequest
 from numba import jit
 import argparse
+import random
+import time
+from apiclient.errors import HttpError
 
 logging = init('calendar')
 batchcount = 0
@@ -112,21 +115,32 @@ def bachExecute(EVENT, service, http, lastFlg = None):
 #    okcnt = 0
 #    ngcnt = 0
 
-    if batch is None:
-        batch = service.new_batch_http_request(callback=delete_calendar)
-    logging.debug('-----batchpara-------')
-    logging.debug(EVENT)
-    if batchcount < 100:
-        batch.add(service.events().delete(calendarId=EVENT['organizer'], eventId=EVENT['id']))
-        batchcount = batchcount + 1
-        logging.debug(str(batchcount))
+    for n in range(0, 5): #指数バックオフ(遅延処理対応)
 
-    if batchcount >= 100 or lastFlg == True:
-        logging.debug('batchexecute-------before---------------------')
-        batch.execute(http=http)
-        batch = service.new_batch_http_request(callback=delete_calendar)
-        logging.debug('batchexecute-------after---------------------')
-        batchcount = 0
+        try:
+            if batch is None:
+                batch = service.new_batch_http_request(callback=delete_calendar)
+            logging.debug('-----batchpara-------')
+            logging.debug(EVENT)
+            if batchcount < 100:
+                batch.add(service.events().delete(calendarId=EVENT['organizer'], eventId=EVENT['id']))
+                batchcount = batchcount + 1
+                logging.debug(str(batchcount))
+
+            if batchcount >= 100 or lastFlg == True:
+                logging.debug('batchexecute-------before---------------------')
+                batch.execute(http=http)
+                batch = service.new_batch_http_request(callback=delete_calendar)
+                logging.debug('batchexecute-------after---------------------')
+                batchcount = 0
+
+            break
+
+        except HttpError as error:
+            if error.resp.reason in ['userRateLimitExceeded', 'quotaExceeded','internalServerError', 'backendError']:
+                time.sleep((2 ** n) + random.random())
+            else:
+                break
 
     return okcnt, ngcnt
 
