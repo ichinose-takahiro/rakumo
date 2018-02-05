@@ -75,7 +75,6 @@ def bachExecute(EVENT, service, http, lastFlg = None):
     if batch is None:
         batch = service.new_batch_http_request(callback=delete_calendar)
     logging.debug('-----batchpara-------')
-    #logging.debug(vars(batch))
     logging.debug(EVENT)
     if batchcount < 100:
         batch.add(service.events().delete(calendarId=EVENT['organizer'], eventId=EVENT['id']))
@@ -93,22 +92,16 @@ def delete_calendar(request_id, response, exception):
     global writeObj
     global okcnt
     global ngcnt
+    okcnt = 0
+    ngcnt = 0
     if exception is None:
         logging.debug('callback----OK-------')
         logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
         #writeObj.writerow(response)
         okcnt = okcnt + 1
         pass
-    #elif exception['content']['reason'] == 'deleted':
-    #    loging.debug('callback----OK-------')
-    #    logging.debug('request_id:'+str(request_id) + ' reason:deleted' )
-    #    pass
     else:
-        #logging.debug(json.loads(vars(exception)['content'],encoding='UTF-8'))
-        #logging.debug(vars(exception)['content'].decode('utf-8'))
         exc_content = json.loads(vars(exception)['content'],encoding='UTF-8')['error']
-        #logging.debug(exc_content['code'])
-        #logging.debug(exc_content['errors'][0]['reason'])
         if str(exc_content['code']) == '410' and exc_content['errors'][0]['reason'] == 'deleted':
             logging.debug('callback----OK-------')
             logging.debug('request_id:'+str(request_id) + ' reason:deleted' )
@@ -120,7 +113,6 @@ def delete_calendar(request_id, response, exception):
             logging.debug('exception:')
             logging.debug(vars(exception))
             # Do something with the response
-            #logging.debug('exception:' + exception)
             raise(Exception(exception))
     return response
 
@@ -152,29 +144,37 @@ def main():
         creds = tools.run_flow(flow, store, flags) \
               if flags else tools.run(flow, store)
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
-    #cnt = 0
+    progressList = {}
     for calendarcsv in CALENDARCSVS:
-      cnt = 0
-      logging.debug(WORKDIR + calendarcsv)
-      clList= getCalendarData(WORKDIR + calendarcsv)
-      logging.debug('------calendarDataDelete start------')
-      for event in clList:
-        #try:
-            #ref = CAL.events().delete(calendarId=event['organizer'], eventId=event['id']).execute()
-        if(cnt < len(clList) - 1):
-            bachExecute(event, CAL, creds.authorize(Http()))
-        else:
-            bachExecute(event, CAL, creds.authorize(Http()),True)
-        #except Exception as e:
-        #    logging.debug(format(e))
-             
-        cnt = cnt + 1
-        progress(cnt-1, len(clList))
+        cnt = 0
+        logging.debug(WORKDIR + calendarcsv)
+        clList= getCalendarData(WORKDIR + calendarcsv)
+        logging.debug('------calendarDataDelete start------')
+        for event in clList:
+            #try:
+                #ref = CAL.events().delete(calendarId=event['organizer'], eventId=event['id']).execute()
+            if(cnt < len(clList) - 1):
+                bachExecute(event, CAL, creds.authorize(Http()))
+            else:
+                bachExecute(event, CAL, creds.authorize(Http()),True)
+            #except Exception as e:
+            #    logging.debug(format(e))
 
-      progress(cnt-1, len(clList))
-      logging.debug('------calendarDataDelete end------')
-      logging.debug('OK CNT:'+str(okcnt))
-      logging.debug('NG CNT:'+str(ngcnt))
+            cnt = cnt + 1
+            progress(cnt-1, len(clList))
+
+        progress(cnt-1, len(clList))
+        logging.debug('------calendarDataDelete end------')
+        logging.debug('CSVFILE:' + WORKDIR + calendarcsv)
+        logging.debug('OK CNT:'+str(okcnt))
+        logging.debug('NG CNT:'+str(ngcnt))
+
+        progressList.append('CSVFILE:' + calendarcsv + ' OKCNT:'+str(okcnt) + ' NGCNT:'+str(ngcnt) )
+
+    logging.debug('------FINISH calendarDataDelete------')
+    for pdata in progressList:
+        logging.debug(pdata)
+
 
 if __name__ == '__main__':
 
