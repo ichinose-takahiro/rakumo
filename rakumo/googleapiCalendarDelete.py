@@ -114,33 +114,40 @@ def bachExecute(EVENT, service, http, lastFlg = None):
     global ngcnt
 #    okcnt = 0
 #    ngcnt = 0
+    rtnFlg = False
 
-    for n in range(0, 5): #指数バックオフ(遅延処理対応)
+    if batch is None:
+        batch = service.new_batch_http_request(callback=delete_calendar)
+    logging.debug('-----batchpara-------')
+    logging.debug(EVENT)
+    if batchcount < 100:
+        batch.add(service.events().delete(calendarId=EVENT['organizer'], eventId=EVENT['id']))
+        batchcount = batchcount + 1
+        logging.debug(str(batchcount))
 
-        try:
-            if batch is None:
-                batch = service.new_batch_http_request(callback=delete_calendar)
-            logging.debug('-----batchpara-------')
-            logging.debug(EVENT)
-            if batchcount < 100:
-                batch.add(service.events().delete(calendarId=EVENT['organizer'], eventId=EVENT['id']))
-                batchcount = batchcount + 1
-                logging.debug(str(batchcount))
+    if batchcount >= 100 or lastFlg == True:
+        logging.debug('batchexecute-------before---------------------')
 
-            if batchcount >= 100 or lastFlg == True:
-                logging.debug('batchexecute-------before---------------------')
+        for n in range(0, 5):  # 指数バックオフ(遅延処理対応)
+
+            try:
                 batch.execute(http=http)
-                batch = service.new_batch_http_request(callback=delete_calendar)
-                logging.debug('batchexecute-------after---------------------')
-                batchcount = 0
-
-            break
-
-        except HttpError as error:
-            if error.resp.reason in ['userRateLimitExceeded', 'quotaExceeded','internalServerError', 'backendError']:
-                time.sleep((2 ** n) + random.random())
-            else:
+                rtnFlg = True
                 break
+            except HttpError as error:
+                if error.resp.reason in ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']:
+                    logging.debug('exponential backoff')
+                    time.sleep((2 ** n) + random.random())
+                else:
+                    raise Exception(error)
+
+        if rtnFlg != True:
+            raise Exception("There has been an error, the request never succeeded.")
+
+        batch = service.new_batch_http_request(callback=delete_calendar)
+        logging.debug('batchexecute-------after---------------------')
+        batchcount = 0
+
 
     return okcnt, ngcnt
 
