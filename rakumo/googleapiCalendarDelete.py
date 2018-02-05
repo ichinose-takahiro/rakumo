@@ -17,6 +17,7 @@ import os
 from loginglibrary import init
 from apiclient.http import BatchHttpRequest
 from numba import jit
+import argparse
 
 logging = init('calendar')
 batchcount = 0
@@ -24,7 +25,8 @@ batch = None
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
-CALENDARCSV = WORKDIR + 'calendarList.csv'
+#CALENDARCSV = WORKDIR + 'calendarList.csv'
+CALENDARCSV = WORKDIR + 'calendarList_20180201131347.csv'
 DELETESTRING = 'https://www.google.com/calendar/event?eid='
 CLIENT_SECRET_FILE = './json/client_secret.json'
 SCOPES = 'https://www.googleapis.com/auth/calendar'
@@ -63,7 +65,6 @@ def progress(p, l):
     sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
     sys.stdout.flush()
 
-@jit
 def bachExecute(EVENT, service, http, lastFlg = None):
     global batchcount
     global batch
@@ -73,7 +74,7 @@ def bachExecute(EVENT, service, http, lastFlg = None):
     #logging.debug(vars(batch))
     logging.debug(EVENT)
     if batchcount < 100:
-        batch.add(ref = service.events().delete(calendarId=EVENT['organizer'], eventId=EVENT['id']))
+        batch.add(service.events().delete(calendarId=EVENT['organizer'], eventId=EVENT['id']))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
 
@@ -84,23 +85,40 @@ def bachExecute(EVENT, service, http, lastFlg = None):
         logging.debug('batchexecute-------after---------------------')
         batchcount = 0
 
-@jit
 def delete_calendar(request_id, response, exception):
     global writeObj
     if exception is None:
         logging.debug('callback----OK-------')
         logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
-        writeObj.writerow(response)
+        #writeObj.writerow(response)
         pass
+    #elif exception['content']['reason'] == 'deleted':
+    #    loging.debug('callback----OK-------')
+    #    logging.debug('request_id:'+str(request_id) + ' reason:deleted' )
+    #    pass
     else:
-        logging.debug('callback----NG-------')
-        logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
-        logging.debug('exception:')
-        logging.debug(vars(exception))
-        # Do something with the response
-        #logging.debug('exception:' + exception)
-        raise(Exception(exception))
+        #logging.debug(json.loads(vars(exception)['content'],encoding='UTF-8'))
+        #logging.debug(vars(exception)['content'].decode('utf-8'))
+        exc_content = json.loads(vars(exception)['content'],encoding='UTF-8')['error']
+        #logging.debug(exc_content['code'])
+        #logging.debug(exc_content['errors'][0]['reason'])
+        if str(exc_content['code']) == '410' and exc_content['errors'][0]['reason'] == 'deleted':
+            logging.debug('callback----OK-------')
+            logging.debug('request_id:'+str(request_id) + ' reason:deleted' )
+            pass
+        else:
+            logging.debug('callback----NG-------')
+            logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
+            logging.debug('exception:')
+            logging.debug(vars(exception))
+            # Do something with the response
+            #logging.debug('exception:' + exception)
+            raise(Exception(exception))
     return response
+
+def progress(p, l):
+    sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
+    sys.stdout.flush()
 
 @jit
 def main():
@@ -109,7 +127,7 @@ def main():
     :return: なし
     """
     #try:
-    import argparse
+    #import argparse
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
     #except ImportError:
     #    flags = None
@@ -126,16 +144,23 @@ def main():
         creds = tools.run_flow(flow, store, flags) \
               if flags else tools.run(flow, store)
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
-
+    cnt = 0
+    clList= getCalendarData()
     logging.debug('------calendarDataDelete start------')
-    for event in getCalendarData():
+    for event in clList:
         #try:
             #ref = CAL.events().delete(calendarId=event['organizer'], eventId=event['id']).execute()
-        bachExecute(event, CAL, creds.authorize(Http()))
-
+        if(cnt < len(clList) - 1):
+            bachExecute(event, CAL, creds.authorize(Http()))
+        else:
+            bachExecute(event, CAL, creds.authorize(Http()),True)
         #except Exception as e:
         #    logging.debug(format(e))
+             
+        cnt = cnt + 1
+        progress(cnt-1, len(clList))
 
+    progress(cnt-1, len(clList))
     logging.debug('------calendarDataDelete end------')
 
 if __name__ == '__main__':
