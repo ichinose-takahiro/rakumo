@@ -139,6 +139,7 @@ def bachExecute(EVENT, service, http, lastFlg = None):
                     logging.debug('exponential backoff')
                     time.sleep((2 ** n) + random.random())
                 else:
+                    logging.debug('else error')
                     raise Exception(error)
 
         if rtnFlg != True:
@@ -174,7 +175,7 @@ def delete_calendar(request_id, response, exception):
             logging.debug('exception:')
             logging.debug(vars(exception))
             # Do something with the response
-            raise(Exception(exception))
+            raise(HttpError(exc_content['code'], reason=exc_content['errors'][0]['reason']))
     return response
 
 def progress(p, l):
