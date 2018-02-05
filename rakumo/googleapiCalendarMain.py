@@ -160,7 +160,7 @@ def getResourceAddress(data):
     ret = None
     for resourceData in getResource():
         resourceData = json.loads(resourceData,encoding='UTF-8')
-        if resourceData['generatedResourceName'].replace('[テスト中]','') == data['RESOURCE']:
+        if resourceData['generatedResourceName'] == data['RESOURCE']:
             ret = resourceData['resourceEmail']
             break
     return ret
@@ -562,11 +562,11 @@ def main():
         else:
             # 移行対象ではないユーザ
             if memData['useFlg'] == False:
-                logging.debug('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + sid + '] SCE_SID[' + eid + '] SCD_GRP_SID[' + gid + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                logging.debug('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
                 noUseCnt = noUseCnt + 1
             # 移行できなかったユーザー
             elif memData['retFlg'] == False:
-                logging.debug('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + sid + '] SCE_SID[' + eid + '] SCD_GRP_SID[' + gid + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                logging.debug('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
                 noMigCnt = noMigCnt + 1
             else:
                 logging.warn('ERRORMEMDATA=' + memData)
