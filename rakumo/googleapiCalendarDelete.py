@@ -137,7 +137,7 @@ def bachExecute(EVENT, service, http, lastFlg = None):
             except HttpError as error:
                 errcontent = json.loads(vars(error)['content'],encoding='UTF-8')['error']
                 if errcontent['errors'][0]['reason'] in ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']:
-                    logging.debug('exponential backoff:' + str(n) + '回目:' + errcontent['errors'][0]['reason'])
+                    logging.debug('exponential backoff:' + str(n+1) + '回目:' + errcontent['errors'][0]['reason'])
                     time.sleep((2 ** n) + random.random())
                 else:
                     logging.debug('else error')
@@ -171,7 +171,7 @@ def delete_calendar(request_id, response, exception):
             pass            
         else:
             logging.debug('callback----NG-------')
-            logging.debug('request_id:'+str(request_id) + ' exception:' + exc_content )
+            logging.debug('request_id:'+str(request_id) + ' exception:' + str(vars(exception)['content']) )
             # Do something with the response
             raise exception
     return response
@@ -219,7 +219,7 @@ def main():
         clList= getCalendarData(WORKDIR + calendarcsv)
         logging.debug('------calendarDataDelete start------')
         for event in clList:
-            logging.debug('LINECNT:'+ str(cnt))
+            logging.debug('LINECNT:'+ str(cnt+1))
             #try:
                 #ref = CAL.events().delete(calendarId=event['organizer'], eventId=event['id']).execute()
             if(cnt < len(clList) - 1):
