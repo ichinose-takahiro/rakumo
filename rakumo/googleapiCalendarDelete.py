@@ -68,9 +68,9 @@ CALENDARCSVS = [
 #'calendarList_20180201172644.csv', #end
 #'calendarList_20180202110319.csv', #end
 #'calendarList_20180202112739.csv', #end
-'calendarList_20180202113228.csv',
-'calendarList_20180202115103.csv',
-'calendarList_20180202120343.csv',
+#'calendarList_20180202113228.csv',
+#'calendarList_20180202115103.csv',
+#'calendarList_20180202120343.csv',
 'calendarList_20180202130013.csv',
 ]
 @jit
@@ -128,19 +128,20 @@ def bachExecute(EVENT, service, http, lastFlg = None):
     if batchcount >= 100 or lastFlg == True:
         logging.debug('batchexecute-------before---------------------')
 
-        for n in range(0, 5):  # 指数バックオフ(遅延処理対応)
+        for n in range(0, 10):  # 指数バックオフ(遅延処理対応)
 
             try:
                 batch.execute(http=http)
                 rtnFlg = True
                 break
             except HttpError as error:
-                if error.resp.reason in ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']:
-                    logging.debug('exponential backoff')
+                errcontent = json.loads(vars(error)['content'],encoding='UTF-8')['error']
+                if errcontent['errors'][0]['reason'] in ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']:
+                    logging.debug('exponential backoff:' + str(n) + '回目:' + errcontent['errors'][0]['reason'])
                     time.sleep((2 ** n) + random.random())
                 else:
                     logging.debug('else error')
-                    raise Exception(error)
+                    raise HttpError(error)
 
         if rtnFlg != True:
             raise Exception("There has been an error, the request never succeeded.")
@@ -158,8 +159,7 @@ def delete_calendar(request_id, response, exception):
     global ngcnt
     if exception is None:
         logging.debug('callback----OK-------')
-        logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
-        #writeObj.writerow(response)
+        logging.debug('request_id:'+str(request_id) )
         okcnt = okcnt + 1
         pass
     else:
@@ -171,11 +171,9 @@ def delete_calendar(request_id, response, exception):
             pass            
         else:
             logging.debug('callback----NG-------')
-            logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
-            logging.debug('exception:')
-            logging.debug(vars(exception))
+            logging.debug('request_id:'+str(request_id) + ' exception:' + exc_content )
             # Do something with the response
-            raise(HttpError(exc_content['code'], reason=exc_content['errors'][0]['reason']))
+            raise exception
     return response
 
 def progress(p, l):
