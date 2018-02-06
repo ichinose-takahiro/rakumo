@@ -19,10 +19,16 @@ from numba import jit
 from pytz import timezone
 from loginglibrary import init
 from apiclient.http import BatchHttpRequest
+import random
+import time
+from apiclient.errors import HttpError
+
 
 logging = init('calendarMain')
 batchcount = 0
 batch = None
+okcnt = 0
+ngcnt = 0
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
@@ -347,22 +353,22 @@ def createEvent(clData):
         EVENT['extendedProperties'] = {'shared': {'eventType': 'other'}}
 
     # 編集権限(仮)
-    #if clData['EDITID'] == SCEDIT['GROUP']:
-    #    EVENT['guestsCanModify'] = 'TRUE'
+    if clData['EDITID'] == SCEDIT['GROUP']:
+        EVENT['guestsCanModify'] = 'TRUE'
 
     # 公開設定
     if clData['PUBLICFLG'] == '1':
         EVENT['visibility'] = 'confidential'
-        EVENT['transparency'] = 'opaque'
+        EVENT['transparency'] = 'transparent'
     elif clData['PUBLICFLG'] == '2':
         EVENT['visibility'] = 'default'
         EVENT['transparency'] = 'opaque'
     elif clData['PUBLICFLG'] == '3':
         EVENT['visibility'] = 'private'
-        EVENT['transparency'] = 'opaque'
+        EVENT['transparency'] = 'transparent'
     else:
         EVENT['visibility'] = 'default'
-        EVENT['transparency'] = 'transparent'
+        EVENT['transparency'] = 'opaque'
     # 参加者設定
     EVENT['attendees'] = [
     #    {'email': 'ichinose-takahiro@919.jp'},
@@ -425,6 +431,9 @@ def createEvent(clData):
 def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     global batchcount
     global batch
+    global okcnt
+    global ngcnt
+
     if batch is None:
         batch = service.new_batch_http_request(callback=insert_calendar)
     logging.debug('-----batchpara-------')
@@ -437,27 +446,55 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
 
     if batchcount >= 50 or lastFlg == True:
         logging.debug('batchexecute-------before---------------------')
-        batch.execute(http=http)
+
+        for n in range(0, 10):  # 指数バックオフ(遅延処理対応)
+
+            try:
+                batch.execute(http=http)
+                rtnFlg = True
+                break
+            except HttpError as error:
+                errcontent = json.loads(vars(error)['content'],encoding='UTF-8')['error']
+                if errcontent['errors'][0]['reason'] in ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']:
+                    logging.debug('exponential backoff:' + str(n+1) + '回目:' + errcontent['errors'][0]['reason'])
+                    time.sleep((2 ** n) + random.random())
+                else:
+                    logging.debug('else error')
+                    raise error
+
+        if rtnFlg != True:
+            raise Exception("There has been an error, the request never succeeded.")
+
         batch = service.new_batch_http_request(callback=insert_calendar)
         logging.debug('batchexecute-------after---------------------')
         batchcount = 0
 
+    return okcnt, ngcnt
+
 def insert_calendar(request_id, response, exception):
     global writeObj
+    global okcnt
+    global ngcnt
     if exception is None:
         logging.debug('callback----OK-------')
         logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
         writeObj.writerow(response)
+        okcnt = okcnt + 1
         pass
     else:
-        logging.debug('callback----NG-------')
-        logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
-        logging.debug('exception:')
-        logging.debug(vars(exception))
-        # Do something with the response
-        #logging.debug('exception:' + exception)
-        raise(Exception(exception))
+        exc_content = json.loads(vars(exception)['content'], encoding='UTF-8')['error']
+        if str(exc_content['code']) == '410' and exc_content['errors'][0]['reason'] == 'deleted':
+            logging.debug('callback----OK-------')
+            logging.debug('request_id:' + str(request_id) + ' reason:deleted')
+            ngcnt = ngcnt + 1
+            pass
+        else:
+            logging.debug('callback----NG-------')
+            logging.debug('request_id:' + str(request_id) + ' exception:' + str(vars(exception)['content']))
+            # Do something with the response
+            raise exception
     return response
+
 
 @jit
 def delHolidayData(exdate, rdate):
@@ -471,6 +508,12 @@ def delHolidayData(exdate, rdate):
             rtnExdateList.append(date)
     retunExdate = 'EXDATE;TZID=%s:' % GMT_PLACE + ','.join(rtnExdateList)
     return retunExdate
+
+def init():
+    global okcnt
+    global ngcnt
+    okcnt = 0
+    ngcnt = 0
 
 @jit
 def main():
@@ -512,7 +555,10 @@ def main():
     noMigCnt = 0
     memData = None
     recr_cnt = 0
-    #global batch
+    init()
+    cnt = 0
+    _okcnt = 0
+    _ngcnt = 0    #global batch
     #batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
     for clData in clList:
@@ -549,7 +595,7 @@ def main():
                     #メールアドレスがないやつがあるので、取得せなならん
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-                    bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
+                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
                     recr_cnt = 0
                     logging.debug('------------------------------')
                     #logging.debug()
@@ -582,7 +628,7 @@ def main():
     # 最後の一つは必ず実行する
     logging.debug('------------end----------------')
     if memData is not None:
-        bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
+        _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
     #ref = CAL.events().insert(calendarId='ichinose-takahiro@919.jp', conferenceDataVersion=1, sendNotifications=False, body=EVENT).execute()
     #logging.debug(ref)
@@ -591,10 +637,12 @@ def main():
     #except ValueError as e:
     #    logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
     #    logging.debug('ERROR END')
-
+    logging.debug('CSVFILE:' + WORKLOG)
     logging.debug('calendarMigration END count:'+str(cnt))
     logging.debug('noUseCnt:' + str(noUseCnt))
     logging.debug('noMigCnt:' + str(noMigCnt))
+    logging.debug('OK CNT:' + str(_okcnt))
+    logging.debug('NG CNT:' + str(_ngcnt))
 
 if __name__ == '__main__':
 

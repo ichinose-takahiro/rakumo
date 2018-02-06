@@ -143,7 +143,7 @@ def bachExecute(EVENT, service, http, lastFlg = None):
                     time.sleep((2 ** n) + random.random())
                 else:
                     logging.debug('else error')
-                    raise HttpError(error)
+                    raise error
 
         if rtnFlg != True:
             raise Exception("There has been an error, the request never succeeded.")
