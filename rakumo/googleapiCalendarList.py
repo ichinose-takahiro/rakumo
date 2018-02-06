@@ -5,18 +5,23 @@ from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
-from .loginglibrary import init
+from loginglibrary import init
 import csv
+import datetime
+from pytz import timezone
 
+WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 CLIENT_SECRET_FILE = './json/client_secret.json'
 APPLICATION_NAME = 'Directory API Python Quickstart'
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
 CSVFILE = WORKDIR + 'calendarList_'+TODAY+'.csv'
-DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'transparency',
-           'creator', 'organizer', 'start', 'end', 'recurrence', 'visibility', 'iCalUID', 'sequence', 'attendees',
-           'extendedProperties', 'reminders', 'overrides']
-
+DICTKEY =['kind','etag','id','status','htmlLink','created','updated','summary',
+          'description','location','colorId','creator','organizer','start','end',
+          'endTimeUnspecified','recurrence','recurringEventId','originalStartTime','transparency',
+          'visibility','iCalUID','sequence','attendees','attendeesOmitted','extendedProperties',
+          'hangoutLink','conferenceData','gadget','anyoneCanAddSelf','guestsCanInviteOthers',
+          'guestsCanModify','guestsCanSeeOtherGuests','privateCopy','locked','reminders','source','attachments']
 logging = init('calendarList')
 
 def getApiData(service, dictkey, csvf, w, pagetoken):
@@ -25,7 +30,7 @@ def getApiData(service, dictkey, csvf, w, pagetoken):
     #results = service.users().list(customer='my_customer', orderBy='email', pageToken=pagetoken).execute()
 
 
-    calendarList = service.events().list(calendarId='primary', pageToken=pagetoken, maxResults=2500).execute()
+    calendarList = service.events().list(calendarId='ichinose-takahiro@919.jp', pageToken=pagetoken, maxResults=2500).execute()
 
     if not calendarList:
         logging.debug('No calendar in the domain.')
@@ -43,10 +48,7 @@ def getApiData(service, dictkey, csvf, w, pagetoken):
 
     return pagetoken
 
-def Process():
-    getProcess()
-
-def getProcess():
+def main():
 
     try:
         import argparse
@@ -133,5 +135,5 @@ def getProcess():
 
     logging.debug('csv_writer_End')
 
-#if __name__ == '__main__':
-#    main()
+if __name__ == '__main__':
+    main()
