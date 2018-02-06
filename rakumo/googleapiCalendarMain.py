@@ -353,22 +353,22 @@ def createEvent(clData):
         EVENT['extendedProperties'] = {'shared': {'eventType': 'other'}}
 
     # 編集権限(仮)
-    #if clData['EDITID'] == SCEDIT['GROUP']:
-    #    EVENT['guestsCanModify'] = 'TRUE'
+    if clData['EDITID'] == SCEDIT['GROUP']:
+        EVENT['guestsCanModify'] = 'TRUE'
 
     # 公開設定
     if clData['PUBLICFLG'] == '1':
         EVENT['visibility'] = 'confidential'
-        EVENT['transparency'] = 'opaque'
+        EVENT['transparency'] = 'transparent'
     elif clData['PUBLICFLG'] == '2':
         EVENT['visibility'] = 'default'
         EVENT['transparency'] = 'opaque'
     elif clData['PUBLICFLG'] == '3':
         EVENT['visibility'] = 'private'
-        EVENT['transparency'] = 'opaque'
+        EVENT['transparency'] = 'transparent'
     else:
         EVENT['visibility'] = 'default'
-        EVENT['transparency'] = 'transparent'
+        EVENT['transparency'] = 'opaque'
     # 参加者設定
     EVENT['attendees'] = [
     #    {'email': 'ichinose-takahiro@919.jp'},
