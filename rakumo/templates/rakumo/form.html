@@ -25,7 +25,7 @@
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <input type='hidden' name='postType' value='group'>
-        <input type="submit" value="CSVダウンロード" class="mdc-button mdc-button--raised mdc-button--primary">
+        <button type="submit"  class="mdc-button mdc-button--raised mdc-button--primary">CSVダウンロード</button>
     </form>
 
     <p>グループ毎所属メンバーリスト取得</p>
