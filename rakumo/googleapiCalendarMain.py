@@ -35,9 +35,9 @@ WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 USERCSV = WORKDIR + 'user.csv'
 USEREXCSV = WORKDIR + 'userUnique.csv'
 USERNOCSV = WORKDIR + 'userNotMigration.csv'
-RESOURCE = WORKDIR + 'resource.csv'
+RESOURCE = WORKDIR + 'resource_test_20180206.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
-CALENDARCSV = WORKDIR + 'groupSessionData.csv'
+CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
 CLIENT_SECRET_FILE = './json/client_secret.json'
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
@@ -166,7 +166,7 @@ def getResourceAddress(data):
     ret = None
     for resourceData in getResource():
         resourceData = json.loads(resourceData,encoding='UTF-8')
-        if resourceData['generatedResourceName'] == data['RESOURCE']:
+        if resourceData['generatedResourceName'] == '[テスト中]'+data['RESOURCE']:
             ret = resourceData['resourceEmail']
             break
     return ret
@@ -353,8 +353,8 @@ def createEvent(clData):
         EVENT['extendedProperties'] = {'shared': {'eventType': 'other'}}
 
     # 編集権限(仮)
-    if clData['EDITID'] == SCEDIT['GROUP']:
-        EVENT['guestsCanModify'] = 'TRUE'
+    #if clData['EDITFLG'] == SCEDIT['GROUP']:
+    #    EVENT['guestsCanModify'] = True
 
     # 公開設定
     if clData['PUBLICFLG'] == '1':
@@ -433,6 +433,7 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     global batch
     global okcnt
     global ngcnt
+    rtnFlg = False
 
     if batch is None:
         batch = service.new_batch_http_request(callback=insert_calendar)
@@ -447,7 +448,7 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     if batchcount >= 50 or lastFlg == True:
         logging.debug('batchexecute-------before---------------------')
 
-        for n in range(0, 10):  # 指数バックオフ(遅延処理対応)
+        for n in range(0, 20):  # 指数バックオフ(遅延処理対応)
 
             try:
                 batch.execute(http=http)
