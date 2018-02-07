@@ -25,14 +25,14 @@
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <input type='hidden' name='postType' value='group'>
-        <input type="submit" value="CSVダウンロード">
+        <input type="submit" value="CSVダウンロード" class="mdc-button mdc-button--raised mdc-button--primary">
     </form>
 
     <p>グループ毎所属メンバーリスト取得</p>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <input type='hidden' name='postType' value='groupmem'>
-        <input type="submit" value="CSVダウンロード">
+        <input type="submit" value="CSVダウンロード" class="mdc-button mdc-button--raised mdc-button--primary">
     </form>
 
     <p>グループメンバー追加</p>
@@ -40,7 +40,7 @@
         {% csrf_token %}
         <input type='file' name='file' maxlength="50">
         <input type='hidden' name='postType' value='groupmemAdd'>
-        <input type="submit" value="取り込み実行">
+        <input type="submit" value="取り込み実行" class="mdc-button mdc-button--raised mdc-button--primary">
     </form>
 
     <p>グループメンバー削除</p>
@@ -55,21 +55,21 @@
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <input type='hidden' name='postType' value='groupmemTmp'>
-        <input type="submit" value="ダウンロード">
+        <input type="submit" value="ダウンロード" class="mdc-button mdc-button--raised mdc-button--primary">
     </form>
 
     <p>メンバーリスト取得</p>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <input type='hidden' name='postType' value='user'>
-        <input type="submit" value="CSVダウンロード">
+        <input type="submit" value="CSVダウンロード" class="mdc-button mdc-button--raised mdc-button--primary">
     </form>
 
     <p>施設リスト取得</p>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <input type='hidden' name='postType' value='resource'>
-        <input type="submit" value="CSVダウンロード">
+        <input type="submit" value="CSVダウンロード" class="mdc-button mdc-button--raised mdc-button--primary">
     </form>
 
     <p>施設情報更新</p>
@@ -77,14 +77,14 @@
         {% csrf_token %}
         <input type='file' name='file' maxlength="50">
         <input type='hidden' name='postType' value='resourceUpdate'>
-        <input type="submit" value="取り込み実行">
+        <input type="submit" value="取り込み実行" class="mdc-button mdc-button--raised mdc-button--primary">
     </form>
 
     <p>施設情報更新テンプレート取得</p>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <input type='hidden' name='postType' value='resourceTmp'>
-        <input type="submit" value="ダウンロード">
+        <input type="submit" value="ダウンロード" class="mdc-button mdc-button--raised mdc-button--primary">
     </form>
 
 
