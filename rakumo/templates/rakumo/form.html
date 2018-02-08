@@ -19,34 +19,34 @@
 
     <font color="red">{{error_message}}</font>
 
-    <section class="demo-typography--section mdc-theme--primary-light-bg">
-	<div style="padding:30px;">
+    <section class="demo-typography--section">
+	<div style="padding:30px;border:1px solid #cccccc;">
         {{info_message}}
         <div class="mdc-card" style="text-align:center;margin:20px; width:200px;height:150px; float:left">
-        <p style="height:80px;margin-top:40px">グループリスト取得</p>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type='hidden' name='postType' value='group'>
-            <button type="submit"  class="mdc-button mdc-button--raised mdc-button--primary" style="margin-bottom:20px;vertical-align:bottom;">CSVダウンロード</button>
-        </form>
-	</div>
-        <div class="mdc-card" style="text-align:center;margin:20px; width:200px;height:150px; float:left">
-        <p style="height:80px;margin-top:40px">グループ毎所属メンバーリスト取得</p>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type='hidden' name='postType' value='groupmem'>
-            <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary" style="margin-bottom:20px;vertical-align:bottom;">>CSVダウンロード</button>
-        </form>
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:80px;margin-top:40px;border:1px solid #cccccc;">グループリスト取得</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='hidden' name='postType' value='group'>
+                <button type="submit"  class="mdc-button mdc-button--raised mdc-button--primary" style="margin-bottom:20px;vertical-align:bottom;">CSVダウンロード</button>
+            </form>
         </div>
-
-        <p>グループメンバー追加</p>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type='file' name='file' maxlength="50">
-            <input type='hidden' name='postType' value='groupmemAdd'>
-            <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">取り込み実行</button>
-        </form>
-
+        <div class="mdc-card" style="text-align:center;margin:20px; width:200px;height:150px; float:left">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:80px;margin-top:40px;border:1px solid #cccccc;">グループ毎所属メンバーリスト取得</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='hidden' name='postType' value='groupmem'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary" style="margin-bottom:20px;vertical-align:bottom;">CSVダウンロード</button>
+            </form>
+        </div>
+        <div class="mdc-card" style="text-align:center;margin:20px; width:200px;height:150px; float:left">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:80px;margin-top:40px;border:1px solid #cccccc;">グループメンバー追加</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='file' name='file' maxlength="50">
+                <input type='hidden' name='postType' value='groupmemAdd'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">取り込み実行</button>
+            </form>
+        </div>
         <p>グループメンバー削除</p>
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
