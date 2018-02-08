@@ -3,15 +3,15 @@
 
 {% block title %}googleデータ取得{% endblock title %}
 {% block content %}
-    <h1 class="mdc-typography--display1">Hello, World!</h1>
-    <button type="button" class="mdc-button mdc-button--raised mdc-button--primary">
+    <h1 class="mdc-typography--display1">G-Suite組織データクレンジング</h1>
+    <!--<button type="button" class="mdc-button mdc-button--raised mdc-button--primary">
       Press Me
-    </button>
-    <h2 class="mdc-typography--display2">Hello, Material Components!</h2>
-    <div class="mdc-text-field" data-mdc-auto-init="MDCTextField">
+    </button>-->
+    <!--<h2 class="mdc-typography--display2">Hello, Material Components!</h2>-->
+    <!--<div class="mdc-text-field" data-mdc-auto-init="MDCTextField">
       <input type="text" class="mdc-text-field__input" id="demo-input">
       <label for="demo-input" class="mdc-text-field__label">Tell us how you feel!</label>
-    </div>
+    </div>-->
     <!--<script src="node_modules/material-components-web/dist/material-components-web.js"></script>-->
     <!--<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>-->
     <script src="{% static 'node_modules/material-components-web/dist/material-components-web.js' %}"></script>
@@ -20,78 +20,93 @@
     <font color="red">{{error_message}}</font>
 
     <section class="demo-typography--section">
-	<div style="padding:30px;border:1px solid #cccccc;">
+	<div style="padding:30px;border:1px solid #cccccc;overflow:hidden;">
         {{info_message}}
-        <div class="mdc-card" style="text-align:center;margin:20px; width:200px;height:150px; float:left">
-            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:80px;margin-top:40px;border:1px solid #cccccc;">グループリスト取得</p>
+        <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left; position:relative">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">グループリスト取得</p>
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type='hidden' name='postType' value='group'>
-                <button type="submit"  class="mdc-button mdc-button--raised mdc-button--primary" style="margin-bottom:20px;vertical-align:bottom;">CSVダウンロード</button>
+                <button type="submit"  class="mdc-button mdc-button--raised mdc-button--primary" style="margin-top:20px;">CSVダウンロード</button>
             </form>
         </div>
-        <div class="mdc-card" style="text-align:center;margin:20px; width:200px;height:150px; float:left">
-            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:80px;margin-top:40px;border:1px solid #cccccc;">グループ毎所属メンバーリスト取得</p>
+        <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left;">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:65px;margin-top:0;padding-top:15px;border:1px solid #cccccc;">グループ毎所属<br>メンバーリスト取得</p>
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type='hidden' name='postType' value='groupmem'>
-                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary" style="margin-bottom:20px;vertical-align:bottom;">CSVダウンロード</button>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary" style="margin-top:20px;">CSVダウンロード</button>
             </form>
         </div>
-        <div class="mdc-card" style="text-align:center;margin:20px; width:200px;height:150px; float:left">
-            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:80px;margin-top:40px;border:1px solid #cccccc;">グループメンバー追加</p>
+        <div class="mdc-card" style="text-align:center;margin:10px; width:280px;height:200px; float:left">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">グループメンバー追加</p>
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-                <input type='file' name='file' maxlength="50">
+                <input id="filegroup" type='file' name='file' maxlength="50" style="width:240px; margin-bottom:20px;">
                 <input type='hidden' name='postType' value='groupmemAdd'>
                 <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">取り込み実行</button>
             </form>
         </div>
-        <p>グループメンバー削除</p>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type='file' name='file' maxlength="50">
-            <input type='hidden' name='postType' value='groupmemDel'>
-            <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">取り込み実行</button>
-        </form>
+        <div class="mdc-card" style="text-align:center;margin:10px; width:280px;height:200px; float:left">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">グループメンバー削除</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='file' name='file' maxlength="50" style="width:240px; margin-bottom:20px;">
+                <input type='hidden' name='postType' value='groupmemDel'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">取り込み実行</button>
+            </form>
+        </div>
 
-        <p>グループメンバー更新テンプレート取得</p>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type='hidden' name='postType' value='groupmemTmp'>
-            <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">ダウンロード</button>
-        </form>
+         <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:65px;margin-top:0;padding-top:15px;border:1px solid #cccccc;">グループメンバー更新<br>テンプレート取得</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='hidden' name='postType' value='groupmemTmp'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary" style="margin-top:20px;">CSVダウンロード</button>
+            </form>
+        </div>
 
-        <p>メンバーリスト取得</p>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type='hidden' name='postType' value='user'>
-            <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">CSVダウンロード</button>
-        </form>
+          <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left;">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">メンバーリスト取得</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='hidden' name='postType' value='user'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary" style="margin-top:20px;">CSVダウンロード</button>
+            </form>
+          </div>
     </div>
     </section>
-    <section class="demo-typography--section mdc-theme--secondary-dark-bg">
-        <p>施設リスト取得</p>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type='hidden' name='postType' value='resource'>
-            <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">CSVダウンロード</button>
+<div style="clear:float"></div>
+    <section class="demo-typography--section" style="margin:10px 0;">
+        <div style="padding:30px;border:1px solid #cccccc;overflow:hidden;">
+        <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left;">
+            <p class="mdc-card--p mdc-theme--secondary-dark-bg" style="color:#ffffff;height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">施設リスト取得</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='hidden' name='postType' value='resource'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary" style="margin-top:20px;">CSVダウンロード</button>
         </form>
+        </div>
 
-        <p>施設情報更新</p>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type='file' name='file' maxlength="50">
-            <input type='hidden' name='postType' value='resourceUpdate'>
-            <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">取り込み実行</button>
-        </form>
+        <div class="mdc-card" style="text-align:center;margin:10px; width:280px;height:200px; float:left;">
+            <p class="mdc-card--p mdc-theme--secondary-dark-bg" style="color:#FFFFFF;height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">施設情報更新</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='file' name='file' maxlength="50" style="width:240px; margin-bottom:20px;">
+                <input type='hidden' name='postType' value='resourceUpdate'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">取り込み実行</button>
+            </form>
+        </div>
 
-        <p>施設情報更新テンプレート取得</p>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type='hidden' name='postType' value='resourceTmp'>
-            <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">ダウンロード</button>
-        </form>
+        <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left;">
+            <p class="mdc-card--p mdc-theme--secondary-dark-bg" style="color:#ffffff;height:65px;margin-top:0;padding-top:15px;border:1px solid #cccccc;">施設情報更新<br>テンプレート取得</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='hidden' name='postType' value='resourceTmp'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary" style="margin-top:20px;">ダウンロード</button>
+            </form>
+        </div>
+        </div>
     </section>
 
 {% endblock content %}
