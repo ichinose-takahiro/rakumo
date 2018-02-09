@@ -17,8 +17,21 @@ from .calendarGroupsMemberInsert import Process as gmaProcess
 from .calendarGroupsMemberDelete import Process as gmdProcess
 from .loginglibrary import init
 from django import forms
+
+from googleapiclient.discovery import build
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseBadRequest
+from django.http import HttpResponseRedirect
+from django.shortcuts import render
+from rakumo.models import CredentialsModel
+from mysite import settings
+from oauth2client.contrib import xsrfutil
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.contrib.django_util.storage import DjangoORMStorage
+
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/upload/'
 DOWNLOAD_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
+GOOGLE_OAUTH2_CLIENT_SECRETS_JSON = './json/client_secret.json'
 
 # Create your views here.
 #from django.http import HttpResponse
@@ -29,14 +42,38 @@ DOWNLOAD_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 from django.http import HttpResponse
 from django.template import loader
 
-#from .models import Question
-loging = init()
+FLOW = flow_from_clientsecrets(
+    GOOGLE_OAUTH2_CLIENT_SECRETS_JSON,
+    scope='https://www.googleapis.com/auth/rakumo.me',
+    redirect_uri='http://localhost/oauth2callback')
 
+#from .models import Question
+logging = init()
+
+@login_required
 def index(request):
-    #latest_question_list = Question.objects.order_by('-pub_date')[:5]
-    template = loader.get_template('rakumo/index.html')
+    storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
+    credential = storage.get()
+    if credential is None or credential.invalid == True:
+        FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
+                                                       request.user)
+        authorize_url = FLOW.step1_get_authorize_url()
+        return HttpResponseRedirect(authorize_url)
+    else:
+        http = httplib2.Http()
+        http = credential.authorize(http)
+        service = build("rakumo", "v1", http=http)
+        activities = service.activities()
+        activitylist = activities.list(collection='public',
+                                       userId='me').execute()
+        logging.info(activitylist)
+
+    # return render(request, 'plus/welcome.html', {
+    #             'activitylist': activitylist,
+    #             })
+    template = loader.get_template('rakumo/form.html')
     context = {
-        'latest_question_list': '',
+      'activitylist': activitylist,
     }
     return HttpResponse(template.render(context, request))
 
@@ -48,7 +85,7 @@ def group(request):
     }
     return HttpResponse(template.render(context, request))
 
-
+@login_required
 def form(request):
     if request.method != 'POST':
         return render(request, 'rakumo/form.html')
@@ -66,42 +103,42 @@ def form(request):
 
     print('process_start')
     if postType == 'group':
-        loging.debug('postType group output start')
+        logging.debug('postType group output start')
         gProcess()
         response = HttpResponse(open(DOWNLOAD_DIR + 'groups.csv', 'rb').read(),
                             content_type="text/csv")
         response["Content-Disposition"] = "filename=googleGroupsList_" + today + ".csv"
-        loging.debug('postType group output end')
+        logging.debug('postType group output end')
     elif postType == 'groupmem':
-        loging.debug('postType groupmem output start')
+        logging.debug('postType groupmem output start')
         gmProcess()
         response = HttpResponse(open(DOWNLOAD_DIR + 'groupMember.csv', 'rb').read(),
                                 content_type="text/csv")
         response["Content-Disposition"] = "filename=googleGroupMemberList_" + today + ".csv"
-        loging.debug('postType groupmem output end')
+        logging.debug('postType groupmem output end')
     elif postType == 'resource':
-        loging.debug('postType resource output start')
+        logging.debug('postType resource output start')
         rProcess()
         response = HttpResponse(open(DOWNLOAD_DIR + 'resource.csv', 'rb').read(),
                                 content_type="text/csv")
         response["Content-Disposition"] = "filename=googleResourceList_" + today + ".csv"
-        loging.debug('postType resource output end')
+        logging.debug('postType resource output end')
 
     elif postType == 'user':
-        loging.debug('postType user output start')
+        logging.debug('postType user output start')
         uProcess()
         response = HttpResponse(open(DOWNLOAD_DIR + 'user.csv', 'rb').read(),
                             content_type="text/csv")
         response["Content-Disposition"] = "filename=googleUsersList_" + today + ".csv"
-        loging.debug('postType user output end')
+        logging.debug('postType user output end')
 
     elif postType == 'resourceUpdate':
         t = loader.get_template('rakumo/form.html')
         try:
-            loging.debug('postType resource update start')
+            logging.debug('postType resource update start')
             path = upload(request)
             ruProcess(path)
-            loging.debug('postType resource output end')
+            logging.debug('postType resource output end')
             #response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
             response = redirect('rakumo:complete')
         except forms.ValidationError as e:
@@ -111,10 +148,10 @@ def form(request):
     elif postType == 'groupmemAdd':
         t = loader.get_template('rakumo/form.html')
         try:
-            loging.debug('postType groupmem add start')
+            logging.debug('postType groupmem add start')
             path = upload(request)
             gmaProcess(path)
-            loging.debug('postType groupmem add end')
+            logging.debug('postType groupmem add end')
             #response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
             response = redirect('rakumo:complete')
         except forms.ValidationError as e:
@@ -125,21 +162,21 @@ def form(request):
         response = HttpResponse(open(DOWNLOAD_DIR + 'resourceListTmp.csv', 'rb').read(),
                                 content_type="text/csv")
         response["Content-Disposition"] = "filename=resourceListTmp.csv"
-        loging.debug('postType resource output end')
+        logging.debug('postType resource output end')
 
     elif postType == 'groupmemTmp':
-        loging.debug('postType resource output start')
+        logging.debug('postType resource output start')
         response = HttpResponse(open(DOWNLOAD_DIR + 'groupmenberInsertTmp.csv', 'rb').read(),
                                 content_type="text/csv")
         response["Content-Disposition"] = "filename=groupmenberInsertTmp.csv"
-        loging.debug('postType resource output end')
+        logging.debug('postType resource output end')
     elif postType == 'groupmemDel':
         t = loader.get_template('rakumo/form.html')
         try:
-            loging.debug('postType groupmem update start')
+            logging.debug('postType groupmem update start')
             path = upload(request)
             gmdProcess(path)
-            loging.debug('postType groupmem update end')
+            logging.debug('postType groupmem update end')
             #response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
             response = redirect('rakumo:complete')
         except forms.ValidationError as e:
@@ -164,7 +201,7 @@ def upload(request):
     filename, ext = os.path.splitext(file.name)
     today = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
     path = os.path.join(UPLOADE_DIR, filename + '_' + today + ext)
-    loging.debug(path)
+    logging.debug(path)
     destination = open(path, 'wb')
 
     for chunk in file.chunks():
@@ -174,3 +211,13 @@ def upload(request):
     #insert_data.save()
 
     return path
+
+@login_required
+def auth_return(request):
+  if not xsrfutil.validate_token(settings.SECRET_KEY, request.REQUEST['state'],
+                                 request.user):
+    return  HttpResponseBadRequest()
+  credential = FLOW.step2_exchange(request.REQUEST)
+  storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
+  storage.put(credential)
+  return HttpResponseRedirect("/")
