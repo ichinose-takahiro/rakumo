@@ -14,10 +14,28 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import include, path
+from django.conf.urls import include, url
+from django.contrib.auth.views import login
+from django.views.static import serve
+import rakumo
+admin.autodiscover()
 
+import os
 urlpatterns = [
-    path('polls/', include('polls.urls')),
-    path('rakumo/', include('rakumo.urls')),
-    path('admin/', admin.site.urls),
+    url('rakumo/', include('rakumo.urls')),
+    #url('admin/', admin.site.urls),
+
+    url(r'^oauth2callback', rakumo.views.auth_return),
+
+    # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
+    # to INSTALLED_APPS to enable admin documentation:
+    # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
+
+    # Uncomment the next line to enable the admin:
+    url(r'^admin/', admin.site.urls),
+    url(r'^accounts/login/$', login,
+                        {'template_name': 'rakumo/login.html'},name='login'),
+
+    url(r'^static/(?P<path>.*)$', serve,
+        {'document_root': os.path.join(os.path.dirname(__file__), 'static')}),
 ]
