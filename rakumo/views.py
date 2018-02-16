@@ -15,7 +15,7 @@ from django.template import loader
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/upload/'
 DOWNLOAD_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 
-import logging
+#import logging
 import httplib2
 
 from googleapiclient.discovery import build
@@ -27,58 +27,74 @@ from mysite import settings
 from oauth2client.contrib import xsrfutil
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.contrib.django_util.storage import DjangoORMStorage
-from rakumo.app.loginglibrary import init
+from rakumo.app.loginglibrary import init,setId
+import json
 # CLIENT_SECRETS, name of a file containing the OAuth 2.0 information for this
 # application, including client_id and client_secret, which are found
 # on the API Access tab on the Google APIs
 # Console <http://code.google.com/apis/console>
-logging = init('test')
+#logging = init('view1.py')
 
 FLOW = flow_from_clientsecrets(
     settings.GOOGLE_OAUTH2_CLIENT_SECRETS_JSON,
-    scope='https://www.googleapis.com/auth/plus.me',
+    scope=['https://www.googleapis.com/auth/plus.me','https://www.googleapis.com/auth/admin.directory.user'],
     redirect_uri='http://localhost:8000/oauth2callback')
 
 
 @login_required
 def index(request):
+  #global logging
+  #global creId
   storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
   credential = storage.get()
+  #logging.info(dict(credential.id_token)['sub'])
+  #logging = logging.init('view.py',dict(credential.id_token)['sub'])
+  logging = None
+  logging = setId(dict(credential.id_token)['sub'],logging,'view1.py')
+  logging.info(dict(credential.id_token)['sub'])
   if credential is None or credential.invalid == True:
     FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
                                                    request.user)
     authorize_url = FLOW.step1_get_authorize_url()
     return HttpResponseRedirect(authorize_url)
   else:
+
     http = httplib2.Http()
     http = credential.authorize(http)
-    service = build("plus", "v1", http=http)
-    activities = service.activities()
-    activitylist = activities.list(collection='public',
-                                   userId='me').execute()
-    logging.info(activitylist)
+    #service = build("plus", "v1", http=http)
+    #activities = service.activities()
+    #activitylist = activities.list(collection='public',
+    #                               userId='me').execute()
+
+    #service = build('admin', 'directory_v1', http=http)
+    #results = service.users().get(userKey=dict(credential.id_token)['sub']).execute()
+    #users = results.get('users', [])
+    #logging.info(vars(results))
 
     return render(request, 'rakumo/welcome.html', {
-                'activitylist': activitylist,
+                'activitylist': '',
                 })
 
 
 @login_required
 def auth_return(request):
-  logging.debug(vars(request))
   if not xsrfutil.validate_token(settings.SECRET_KEY, request.GET.get('state').encode('utf-8'),
                                  request.user):
     return  HttpResponseBadRequest()
   credential = FLOW.step2_exchange(request.GET.get('code').encode('utf-8'))
-  logging.debug(credential)
-  logging.debug(CredentialsModel)
+  logging.debug(vars(credential))
+ 
   storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
-  logging.debug(storage)
   storage.put(credential)
   return HttpResponseRedirect("/rakumo/")
 
+
 @login_required
 def form(request):
+##
+    storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
+    credential = storage.get()
+##
     if request.method != 'POST':
         return render(request, 'rakumo/form.html')
 
@@ -97,6 +113,7 @@ def form(request):
     if postType == 'group':
         logging.debug('postType group output start')
         gProcess()
+        #gProcess(credential)
         response = HttpResponse(open(DOWNLOAD_DIR + 'groups.csv', 'rb').read(),
                             content_type="text/csv")
         response["Content-Disposition"] = "filename=googleGroupsList_" + today + ".csv"
