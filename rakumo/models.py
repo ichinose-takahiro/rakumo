@@ -1,15 +1,9 @@
-from django.contrib import admin
-from django.contrib.auth.models import User
 from django.db import models
 
-from oauth2client.contrib.django_util.models import CredentialsField
+# Create your models here.
+from django.db import models
+from datetime import datetime
 
-
-class CredentialsModel(models.Model):
-  #id = models.ForeignKey(User, primary_key=True)
-  id = models.OneToOneField(User, primary_key=True)
-  credential = CredentialsField()
-
-class CredentialsAdmin(admin.ModelAdmin):
-
-  pass
+class FileNameModel(models.Model):
+    file_name = models.CharField(max_length = 50)
+    upload_time = models.DateTimeField(default = datetime.now)

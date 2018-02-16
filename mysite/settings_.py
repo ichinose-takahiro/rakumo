@@ -25,7 +25,7 @@ SECRET_KEY = 'kurv15z-x%*i8n63l(b=6%xyox@8c)=99wg4pkdmm5u%b0-!y5'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['172.16.26.180','localhost']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -37,8 +37,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'polls',
-    'rakumo',
 ]
 
 MIDDLEWARE = [
@@ -78,8 +76,7 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        'NAME': '/var/www/html/mysite/db.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 
