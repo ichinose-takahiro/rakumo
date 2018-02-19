@@ -1,23 +1,45 @@
+{% extends "rakumo/group.html" %}
+{% load static %}
+
 {% block content %}
 
+<div style="position:relative;">
+<div style="position:absolute;width:300px;height:250px;  top: 350px;
+  left: 50%;
+  transform: translateY(-50%) translateX(-50%);
+  -webkit- transform: translateY(-50%) translateX(-50%);">
 {% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
+<p>ユーザ名とパスワードが合っていません。再度入力ください。</p>
 {% endif %}
 
 <form method="post" action="{% url 'rakumo:login' %}">{% csrf_token %}
 <table>
-<tr>
-    <td>{{ form.username.label_tag }}</td>
-    <td>{{ form.username }}</td>
-</tr>
-<tr>
-    <td>{{ form.password.label_tag }}</td>
-    <td>{{ form.password }}</td>
-</tr>
+<tr><td>
+    <div class="mdc-text-field" data-mdc-auto-init="MDCTextField">
+      <input type="text" class="mdc-text-field__input" id="id_username" name="username" style="width:300px">
+      <label for="demo-input" class="mdc-text-field__label">{{ form.username.label_tag }}</label>
+    </div>
+</td></tr>
+<tr><td>
+    <div class="mdc-text-field" data-mdc-auto-init="MDCTextField">
+      <input type="password" class="mdc-text-field__input" id="id_password" name="password" style="width:300px">
+      <label for="demo-input" class="mdc-text-field__label">{{ form.password.label_tag }}</label>
+    </div>
+</td></tr>
 </table>
 
-<input type="submit" value="login" />
+<!--<input type="submit" value="login" />-->
+    <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">
+      login
+    </button>
 <input type="hidden" name="next" value="{{ next }}" />
+
 </form>
+</div>
+</div>
+    <!--<script src="node_modules/material-components-web/dist/material-components-web.js"></script>-->
+    <!--<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>-->
+    <script src="{% static 'node_modules/material-components-web/dist/material-components-web.js' %}"></script>
+    <script>mdc.autoInit()</script>
 
 {% endblock %}

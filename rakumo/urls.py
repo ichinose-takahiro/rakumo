@@ -8,7 +8,7 @@ import os
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()
-from django.contrib.auth.views import login
+from django.contrib.auth.views import login,logout
 from django.views.static import serve
 
 app_name = 'rakumo'
@@ -29,7 +29,8 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^accounts/login/$', login,
                         {'template_name': 'rakumo/login.html'}, name='login'),
-
+    url(r'^accounts/logout/$', logout,
+        {'template_name': 'rakumo/logout.html'}, name='logout'),
     url(r'^static/(?P<path>.*)$', serve,
         {'document_root': os.path.join(os.path.dirname(__file__), 'static')}),
 ]
