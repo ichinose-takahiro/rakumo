@@ -43,22 +43,18 @@ FLOW = flow_from_clientsecrets(
 
 @login_required
 def index(request):
-  #global logging
-  #global creId
+  logging = init('view1.py')
   storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
   credential = storage.get()
-  #logging.info(dict(credential.id_token)['sub'])
-  #logging = logging.init('view.py',dict(credential.id_token)['sub'])
-  logging = None
-  logging = setId(dict(credential.id_token)['sub'],logging,'view1.py')
-  logging.info(dict(credential.id_token)['sub'])
   if credential is None or credential.invalid == True:
     FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
                                                    request.user)
     authorize_url = FLOW.step1_get_authorize_url()
     return HttpResponseRedirect(authorize_url)
   else:
-
+    logging = None
+    logging = setId(dict(credential.id_token)['sub'],str(vars(request.user)['_wrapped']),logging,'view1.py')
+    logging.info(dict(credential.id_token)['sub'])
     http = httplib2.Http()
     http = credential.authorize(http)
     #service = build("plus", "v1", http=http)
@@ -78,23 +74,35 @@ def index(request):
 
 @login_required
 def auth_return(request):
+  logging = init('view1.py')
   if not xsrfutil.validate_token(settings.SECRET_KEY, request.GET.get('state').encode('utf-8'),
                                  request.user):
     return  HttpResponseBadRequest()
+  if request.GET.get('code') is None:
+      return redirect('rakumo:form')
   credential = FLOW.step2_exchange(request.GET.get('code').encode('utf-8'))
-  logging.debug(vars(credential))
  
   storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
   storage.put(credential)
-  return HttpResponseRedirect("/rakumo/")
+  return HttpResponseRedirect("/rakumo/form")
 
 
 @login_required
 def form(request):
-##
+    logging = None
     storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
     credential = storage.get()
-##
+    if credential is None or credential.invalid == True:
+        FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,request.user)
+        authorize_url = FLOW.step1_get_authorize_url()
+        return HttpResponseRedirect(authorize_url)
+
+    logging = None
+    userId = dict(credential.id_token)['sub']
+    username = str(vars(request.user)['_wrapped'])
+    logging = setId(userId,username,logging,'view1.py')
+    logging.info('form_request')
+
     if request.method != 'POST':
         return render(request, 'rakumo/form.html')
 
@@ -112,6 +120,7 @@ def form(request):
     print('process_start')
     if postType == 'group':
         logging.debug('postType group output start')
+        logging = setId(userId,username,logging,'group')
         gProcess()
         #gProcess(credential)
         response = HttpResponse(open(DOWNLOAD_DIR + 'groups.csv', 'rb').read(),
@@ -120,6 +129,7 @@ def form(request):
         logging.debug('postType group output end')
     elif postType == 'groupmem':
         logging.debug('postType groupmem output start')
+        logging = setId(userId,username,logging,'groupmem')
         gmProcess()
         response = HttpResponse(open(DOWNLOAD_DIR + 'groupMember.csv', 'rb').read(),
                                 content_type="text/csv")
@@ -127,6 +137,7 @@ def form(request):
         logging.debug('postType groupmem output end')
     elif postType == 'resource':
         logging.debug('postType resource output start')
+        logging = setId(userId,username,logging,'resource')
         rProcess()
         response = HttpResponse(open(DOWNLOAD_DIR + 'resource.csv', 'rb').read(),
                                 content_type="text/csv")
@@ -135,6 +146,7 @@ def form(request):
 
     elif postType == 'user':
         logging.debug('postType user output start')
+        logging = setId(userId,username,logging,'user')
         uProcess()
         response = HttpResponse(open(DOWNLOAD_DIR + 'user.csv', 'rb').read(),
                             content_type="text/csv")
@@ -145,6 +157,7 @@ def form(request):
         t = loader.get_template('rakumo/form.html')
         try:
             logging.debug('postType resource update start')
+            logging = setId(userId,username,logging,'resourceUpdate')
             path = upload(request)
             ruProcess(path)
             logging.debug('postType resource output end')
@@ -158,6 +171,7 @@ def form(request):
         t = loader.get_template('rakumo/form.html')
         try:
             logging.debug('postType groupmem add start')
+            logging = setId(userId,username,logging,'groupmemAdd')
             path = upload(request)
             gmaProcess(path)
             logging.debug('postType groupmem add end')
@@ -183,6 +197,7 @@ def form(request):
         t = loader.get_template('rakumo/form.html')
         try:
             logging.debug('postType groupmem update start')
+            logging = setId(userId,username,logging,'groupmemDel')
             path = upload(request)
             gmdProcess(path)
             logging.debug('postType groupmem update end')

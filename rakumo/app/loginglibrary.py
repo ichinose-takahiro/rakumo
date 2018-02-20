@@ -35,7 +35,7 @@ def init(name=None):
     loggers[name] = logger
     return logger
 
-def setId(creId,ii,name):
+def setId(creId,user,ii,name):
     global loggers
   
     if loggers.get(name):
@@ -48,7 +48,7 @@ def setId(creId,ii,name):
     # ルートロガーを取得
     logger = logging.getLogger(name)
 
-    formatter = logging.Formatter('%(asctime)s %(name)s ['+creId+'] %(funcName)s [%(levelname)s]: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    formatter = logging.Formatter('%(asctime)s %(name)s userID:['+creId+'] name:['+ user +'] %(funcName)s [%(levelname)s]: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
     # ハンドラーを作成しフォーマッターを設定
     handler = TimedRotatingFileHandler(
@@ -62,7 +62,6 @@ def setId(creId,ii,name):
     # ロガーにハンドラーを設定、イベント捕捉のためのレベルを設定
     logger.addHandler(handler)
     logger.setLevel(logging.DEBUG)
-    logger.info('test')
     loggers[name] = None
     loggers[name] = logger
     return logger
