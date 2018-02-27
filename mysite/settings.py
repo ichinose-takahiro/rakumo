@@ -25,7 +25,7 @@ SECRET_KEY = 'kurv15z-x%*i8n63l(b=6%xyox@8c)=99wg4pkdmm5u%b0-!y5'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['172.16.26.180','localhost']
+ALLOWED_HOSTS = ['172.16.26.180','localhost','919gsuitetool','127.0.0.1']
 
 
 # Application definition

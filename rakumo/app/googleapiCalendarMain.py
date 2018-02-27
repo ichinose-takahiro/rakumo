@@ -440,27 +440,31 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     logging.debug('-----batchpara-------')
     #logging.debug(vars(batch))
     logging.debug(EVENT)
-    if batchcount < 50:
+    if batchcount < 25:
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
 
-    if batchcount >= 50 or lastFlg == True:
+    if batchcount >= 25 or lastFlg == True:
         logging.debug('batchexecute-------before---------------------')
 
-        for n in range(0, 20):  # 指数バックオフ(遅延処理対応)
+        for n in range(0, 10):  # 指数バックオフ(遅延処理対応)
 
             try:
+                logging.info(vars(batch))
+                for key, bal in vars(batch)['_requests'].items():
+                  logging.info('---request:'+key+'----')
+                  logging.debug(vars(bal))
                 batch.execute(http=http)
                 rtnFlg = True
                 break
             except HttpError as error:
                 errcontent = json.loads(vars(error)['content'],encoding='UTF-8')['error']
                 if errcontent['errors'][0]['reason'] in ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']:
-                    logging.debug('exponential backoff:' + str(n+1) + '回目:' + errcontent['errors'][0]['reason'])
+                    logging.error('exponential backoff:' + str(n+1) + '回目:' + errcontent['errors'][0]['reason'])
                     time.sleep((2 ** n) + random.random())
                 else:
-                    logging.debug('else error')
+                    logging.error('else error')
                     raise error
 
         if rtnFlg != True:
@@ -477,21 +481,23 @@ def insert_calendar(request_id, response, exception):
     global okcnt
     global ngcnt
     if exception is None:
-        logging.debug('callback----OK-------')
-        logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
+        logging.info('callback----OK-------')
+        logging.info('request_id:'+str(request_id) + ' response:' + str(response) )
         writeObj.writerow(response)
         okcnt = okcnt + 1
         pass
     else:
         exc_content = json.loads(vars(exception)['content'], encoding='UTF-8')['error']
         if str(exc_content['code']) == '410' and exc_content['errors'][0]['reason'] == 'deleted':
-            logging.debug('callback----OK-------')
-            logging.debug('request_id:' + str(request_id) + ' reason:deleted')
+            logging.worn('callback----OK-------')
+            logging.worn('request_id:' + str(request_id) + ' reason:deleted')
             ngcnt = ngcnt + 1
             pass
         else:
-            logging.debug('callback----NG-------')
-            logging.debug('request_id:' + str(request_id) + ' exception:' + str(vars(exception)['content']))
+            logging.error('callback----NG-------')
+            logging.debug(response)
+            logging.debug(vars(exception))
+            logging.error('request_id:' + str(request_id) + ' exception:' + str(vars(exception)['content']))
             # Do something with the response
             raise exception
     return response
@@ -609,11 +615,11 @@ def main():
         else:
             # 移行対象ではないユーザ
             if memData['useFlg'] == False:
-                logging.debug('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                logging.warn('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
                 noUseCnt = noUseCnt + 1
             # 移行できなかったユーザー
             elif memData['retFlg'] == False:
-                logging.debug('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                logging.warn('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
                 noMigCnt = noMigCnt + 1
             else:
                 logging.warn('ERRORMEMDATA=' + memData)
@@ -627,7 +633,7 @@ def main():
     #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
     #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL=' + EVENT['enddate']
     # 最後の一つは必ず実行する
-    logging.debug('------------end----------------')
+    logging.info('------------end----------------')
     if memData is not None:
         _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
@@ -638,12 +644,12 @@ def main():
     #except ValueError as e:
     #    logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
     #    logging.debug('ERROR END')
-    logging.debug('CSVFILE:' + WORKLOG)
-    logging.debug('calendarMigration END count:'+str(cnt))
-    logging.debug('noUseCnt:' + str(noUseCnt))
-    logging.debug('noMigCnt:' + str(noMigCnt))
-    logging.debug('OK CNT:' + str(_okcnt))
-    logging.debug('NG CNT:' + str(_ngcnt))
+    logging.info('CSVFILE:' + WORKLOG)
+    logging.info('calendarMigration END count:'+str(cnt))
+    logging.info('noUseCnt:' + str(noUseCnt))
+    logging.info('noMigCnt:' + str(noMigCnt))
+    logging.info('OK CNT:' + str(_okcnt))
+    logging.info('NG CNT:' + str(_ngcnt))
 
 if __name__ == '__main__':
 
