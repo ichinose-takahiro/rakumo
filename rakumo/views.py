@@ -9,6 +9,7 @@ from rakumo.app.calendarResourceList import Process as rProcess
 from rakumo.app.calendarResourceUpdate import Process as ruProcess
 from rakumo.app.calendarGroupsMemberInsert import Process as gmaProcess
 from rakumo.app.calendarGroupsMemberDelete import Process as gmdProcess
+from rakumo.app.calendarAclList import Process as aclProcess
 from django import forms
 from django.http import HttpResponse
 from django.template import loader
@@ -203,6 +204,21 @@ def form(request):
             logging.debug('postType groupmem update end')
             #response = render(request, rform, {'info_message': '処理完了しました。ご確認ください'})
             response = redirect('rakumo:complete')
+        except forms.ValidationError as e:
+            response = render(request, rform, {'error_message': e.args[0]})
+        except KeyError as e:
+            response =  render(request, rform, {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。'})
+    elif postType == 'acl':
+        try:
+            logging.debug('postType acl output start')
+            logging = setId(userId,username,logging,'acl')
+            path = upload(request)
+            aclProcess(path)
+            rProcess()
+            response = HttpResponse(open(DOWNLOAD_DIR + 'acl.csv', 'rb').read(),
+                                    content_type="text/csv")
+            response["Content-Disposition"] = "filename=googleAclList_" + today + ".csv"
+            logging.debug('postType acl output end')
         except forms.ValidationError as e:
             response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:

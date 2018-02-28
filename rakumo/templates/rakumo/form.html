@@ -67,14 +67,23 @@
             </form>
         </div>
 
-          <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left;">
+        <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left;">
             <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">メンバーリスト取得</p>
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type='hidden' name='postType' value='user'>
                 <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary" style="margin-top:20px;">CSVダウンロード</button>
             </form>
-          </div>
+        </div>
+        <div class="mdc-card" style="text-align:center;margin:10px; width:280px;height:200px; float:left">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">権限リスト取得</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='file' name='file' maxlength="50" style="width:240px; margin-bottom:20px;">
+                <input type='hidden' name='postType' value='acl'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">CSVダウンロード</button>
+            </form>
+        </div>
     </div>
     </section>
 <div style="clear:float"></div>
