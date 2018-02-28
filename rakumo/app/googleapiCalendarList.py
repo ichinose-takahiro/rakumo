@@ -12,7 +12,8 @@ from pytz import timezone
 
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 SCOPES = 'https://www.googleapis.com/auth/calendar'
-CLIENT_SECRET_FILE = './json/client_secret.json'
+#CLIENT_SECRET_FILE = './json/client_secret.json'
+CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret_calendar.json'
 APPLICATION_NAME = 'Directory API Python Quickstart'
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
 CSVFILE = WORKDIR + 'calendarList_'+TODAY+'.csv'

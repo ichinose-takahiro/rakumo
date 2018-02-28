@@ -30,7 +30,8 @@ batch = None
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 #CALENDARCSV = WORKDIR + 'calendarList.csv'
 DELETESTRING = 'https://www.google.com/calendar/event?eid='
-CLIENT_SECRET_FILE = './json/client_secret.json'
+#CLIENT_SECRET_FILE = './json/client_secret.json'
+CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret_calendar.json'
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 okcnt = 0
 ngcnt = 0
@@ -73,7 +74,9 @@ CALENDARCSVS = [
 #'calendarList_20180202120343.csv',
 #'calendarList_20180202130013.csv',
 #'calendarList_20180202174409.csv',
-'calendarList_20180206105032.csv'
+#'calendarList_20180206105032.csv'
+#'calendarList_20180221100824.csv'
+'calendarList_20180221121431.csv'
 ]
 @jit
 def getCalendarData(calendacsv):

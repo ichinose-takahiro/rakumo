@@ -38,7 +38,7 @@ USERNOCSV = WORKDIR + 'userNotMigration.csv'
 RESOURCE = WORKDIR + 'resource_test_20180206.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
 CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
-CLIENT_SECRET_FILE = './json/client_secret.json'
+CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret_calendar.json'
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
 WORKLOG = WORKDIR + 'calendarList_'+TODAY+'.csv'
@@ -516,7 +516,7 @@ def init():
     okcnt = 0
     ngcnt = 0
 
-@jit
+#@jit
 def main():
     u""" main メイン処理
     メインで実行する処理
