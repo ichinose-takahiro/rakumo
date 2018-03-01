@@ -9,6 +9,7 @@ from .loginglibrary import init
 from .checkList import doCheck
 import csv
 import json
+from apiclient.errors import HttpError
 
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 #CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
@@ -36,29 +37,40 @@ def csvToJson(csvData):
 
 def getResourceData(service, w, calendarId, pagetoken, http):
     logging.info('Getting the first 10 acls in the domain')
+    
+    try:
+        resourcedatas = service.acl().list(calendarId=calendarId, pageToken=pagetoken).execute()
 
-    resourcedatas = service.acl().list(calendarId=calendarId, pageToken=pagetoken).execute()
+        logging.debug(resourcedatas)
+        if not resourcedatas:
+            logging.info('No acl in the domain.')
 
-    logging.debug(resourcedatas)
-    if not resourcedatas:
-        logging.info('No acl in the domain.')
-
-    else:
-        logging.info('get resource.')
-        if 'nextPageToken' in resourcedatas:
-            pagetoken = resourcedatas['nextPageToken']
         else:
-            pagetoken = None
+            logging.info('get resource.')
+            if 'nextPageToken' in resourcedatas:
+                pagetoken = resourcedatas['nextPageToken']
+            else:
+                pagetoken = None
 
-        # 各行書き込み
-        for data in resourcedatas['items']:
+            # 各行書き込み
+            for data in resourcedatas['items']:
+                w.writerow({'calendarId': calendarId,
+                            'kind': data['kind'],
+                            'etag': data['etag'],
+                            'id': data['id'],
+                            'scope_type': data['scope']['type'],
+                            'scope_value': data['scope']['value'],
+                            'role': data['role']})
+    except HttpError as error:
+        errcontent = json.loads(vars(error)['content'],encoding='UTF-8')['error']
+        if errcontent['errors'][0]['reason'] in ['notFound']:
             w.writerow({'calendarId': calendarId,
-                        'kind': data['kind'],
-                        'etag': data['etag'],
-                        'id': data['id'],
-                        'scope_type': data['scope']['type'],
-                        'scope_value': data['scope']['value'],
-                        'role': data['role']})
+                        'kind': 'notFound',
+                        'etag': '',
+                        'id': '',
+                        'scope_type': '',
+                        'scope_value': '',
+                        'role': ''})
 
     return pagetoken
 
