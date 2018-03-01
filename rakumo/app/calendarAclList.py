@@ -8,13 +8,16 @@ from oauth2client.file import Storage
 from .loginglibrary import init
 from .checkList import doCheck
 import csv
+import json
 
 SCOPES = 'https://www.googleapis.com/auth/calendar'
-CLIENT_SECRET_FILE = './json/client_secret.json'
+#CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
+CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret_calendar.json'
 APPLICATION_NAME = 'Directory API Python Quickstart'
 CSVFILE = '/var/www/html/mysite/rakumo/static/files/acl.csv'
 
-DICTKEY = ['kind', 'etags', 'id', 'scope_type', 'scope_value','role']
+DICTKEY = ['calendarId', 'kind', 'etag', 'id', 'scope_type', 'scope_value','role']
+EVENTKEY = {'calendarId'}
 
 logging = init('acl')
 
@@ -31,13 +34,27 @@ def csvToJson(csvData):
             jsonData.append(line_json)
     return jsonData
 
-def getResourceData(service, w, calendarId, pagetoken):
+def call_google_api(method, url,http ,payload=False):
+ content = {}
+ try:
+     if payload:
+        (resp, content) = http.request(uri=url, method=method, body=urlencode(payload))
+     else:
+        (resp, content) = http.request(uri=url, method=method)
+ except Exception as e:
+     loging.debug('Failed to post request to [{}] due to: {}').format(url, e)
+ return json.loads(content)
+
+def getResourceData(service, w, calendarId, pagetoken, http):
     logging.info('Getting the first 10 acls in the domain')
     #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
     #results = service.users().list(customer='my_customer', orderBy='email', pageToken=pagetoken).execute()
 
     resourcedatas = service.acl().list(calendarId=calendarId, pageToken=pagetoken).execute()
-
+    #resourcedatas = service.acl().list(calendarId='ichinose-takahiro@919.jp', pageToken=pagetoken).execute()
+    #url = 'https://www.googleapis.com/calendar/v3/calendars/{}/acl'.format(calendarId)
+    #resourcedatas = call_google_api("GET", url, http)
+    logging.debug(resourcedatas)
     if not resourcedatas:
         logging.info('No acl in the domain.')
 
@@ -52,11 +69,11 @@ def getResourceData(service, w, calendarId, pagetoken):
         for data in resourcedatas['items']:
             w.writerow({'calendarId': calendarId,
                         'kind': data['kind'],
-                        'etags': data['etags'],
+                        'etag': data['etag'],
                         'id': data['id'],
                         'scope_type': data['scope']['type'],
                         'scope_value': data['scope']['value'],
-                        'role': data['etags']})
+                        'role': data['role']})
 
     return pagetoken
 
@@ -69,7 +86,7 @@ def getProcess():
 
     readList = getResource()
     doCheck(readList, EVENTKEY)
-
+    #readList=[]
     logging.info('Getting the first 10 acls in the domain')
     #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
     #results = service.users().list(customer='my_customer', orderBy='email', pageToken=pagetoken).execute()
@@ -88,7 +105,7 @@ def getProcess():
         os.makedirs(credential_dir)
 
     # 認証ファイルのパスを設定と読み込み
-    credential_path = os.path.join(credential_dir, 'admin-directory_v1_test.json')
+    credential_path = os.path.join(credential_dir, 'calendar_acl.json')
     store = Storage(credential_path)
     credentials = store.get()
 
@@ -122,7 +139,7 @@ def getProcess():
 
     # 認証を行う
     http = credentials.authorize(httplib2.Http())
-    app_admin_service = discovery.build('admin', 'directory_v1', http=http)
+    app_admin_service = discovery.build('calendar', 'v3', http=http)
 
     csvf = open(CSVFILE, 'w')
 
@@ -133,14 +150,16 @@ def getProcess():
     w.writeheader() # ヘッダー書き込み
 
     logging.debug('csv_writer_start')
+    logging.debug(readList)
 
-    for calendarId in readList:
-
+    for readData in readList:
+        readData = json.loads(readData, encoding='UTF-8')
+        logging.debug(readData)
         # 各行書き込み
         pagetoken = None
         cnt = 0
         while cnt < 20:
-            pagetoken = getResourceData(app_admin_service, w, calendarId, pagetoken)
+            pagetoken = getResourceData(app_admin_service, w, readData['calendarId'], pagetoken, http)
             if pagetoken is None:
                 break
             cnt = cnt+1
@@ -149,5 +168,5 @@ def getProcess():
 
     logging.debug('csv_writer_End')
 
-#if __name__ == '__main__':
-#    main()
+if __name__ == '__main__':
+    Process('/var/www/html/mysite/rakumo/static/files/upload/acllist_20180228174057.csv')

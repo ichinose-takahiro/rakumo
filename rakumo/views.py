@@ -241,7 +241,6 @@ def upload(request):
     filename, ext = os.path.splitext(file.name)
     today = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
     path = os.path.join(UPLOADE_DIR, filename + '_' + today + ext)
-    logging.debug(path)
     destination = open(path, 'wb')
 
     for chunk in file.chunks():
