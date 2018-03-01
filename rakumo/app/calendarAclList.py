@@ -34,26 +34,11 @@ def csvToJson(csvData):
             jsonData.append(line_json)
     return jsonData
 
-def call_google_api(method, url,http ,payload=False):
- content = {}
- try:
-     if payload:
-        (resp, content) = http.request(uri=url, method=method, body=urlencode(payload))
-     else:
-        (resp, content) = http.request(uri=url, method=method)
- except Exception as e:
-     loging.debug('Failed to post request to [{}] due to: {}').format(url, e)
- return json.loads(content)
-
 def getResourceData(service, w, calendarId, pagetoken, http):
     logging.info('Getting the first 10 acls in the domain')
-    #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
-    #results = service.users().list(customer='my_customer', orderBy='email', pageToken=pagetoken).execute()
 
     resourcedatas = service.acl().list(calendarId=calendarId, pageToken=pagetoken).execute()
-    #resourcedatas = service.acl().list(calendarId='ichinose-takahiro@919.jp', pageToken=pagetoken).execute()
-    #url = 'https://www.googleapis.com/calendar/v3/calendars/{}/acl'.format(calendarId)
-    #resourcedatas = call_google_api("GET", url, http)
+
     logging.debug(resourcedatas)
     if not resourcedatas:
         logging.info('No acl in the domain.')
@@ -86,10 +71,7 @@ def getProcess():
 
     readList = getResource()
     doCheck(readList, EVENTKEY)
-    #readList=[]
     logging.info('Getting the first 10 acls in the domain')
-    #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
-    #results = service.users().list(customer='my_customer', orderBy='email', pageToken=pagetoken).execute()
 
     try:
         import argparse
@@ -123,9 +105,6 @@ def getProcess():
             os.makedirs(secret_dir)
 
         # 認証キーから認証処理を行うクラスのインスタンスを生成
-        # flow = client.flow_from_clientsecrets(
-        #     os.path.join(secret_dir, 'client_secret_test.json'), scopes)
-
         flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, scopes)
 
         # アプリケーションの名前
