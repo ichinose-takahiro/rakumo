@@ -31,6 +31,7 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.contrib.django_util.storage import DjangoORMStorage
 from rakumo.app.loginglibrary import init,setId
 import json
+import csv
 # CLIENT_SECRETS, name of a file containing the OAuth 2.0 information for this
 # application, including client_id and client_secret, which are found
 # on the API Access tab on the Google APIs
@@ -169,6 +170,8 @@ def form(request):
             response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:
             response = render(request, rform, {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。'})
+        except csv.Error as e:
+            response = render(request, rform, {'error_message': 'ファイルに問題があります。'})
     elif postType == 'groupmemAdd':
         t = loader.get_template('rakumo/form.html')
         try:
@@ -183,6 +186,8 @@ def form(request):
             response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:
             response = render(request, rform, {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。'})
+        except csv.Error as e:
+            response = render(request, rform, {'error_message': 'ファイルに問題があります。'})
     elif postType == 'resourceTmp':
         response = HttpResponse(open(DOWNLOAD_DIR + 'resourceListTmp.csv', 'rb').read(),
                                 content_type="text/csv")
@@ -209,6 +214,8 @@ def form(request):
             response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:
             response =  render(request, rform, {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。'})
+        except csv.Error as e:
+            response = render(request, rform, {'error_message': 'ファイルに問題があります。'})
     elif postType == 'acl' or postType == 'acladd':
         try:
             logging.debug('postType acl output start')
@@ -225,7 +232,10 @@ def form(request):
         except forms.ValidationError as e:
             response = render(request, rform, {'error_message': e.args[0]})
         except KeyError as e:
+            logging.debug(e)
             response =  render(request, rform, {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。'})
+        except csv.Error as e:
+            response = render(request, rform, {'error_message': 'ファイルに問題があります。'})
 
     return response
 

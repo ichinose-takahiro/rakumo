@@ -17,8 +17,8 @@ CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret_calendar.js
 APPLICATION_NAME = 'Directory API Python Quickstart'
 CSVFILE = '/var/www/html/mysite/rakumo/static/files/acl.csv'
 
-DICTKEY = ['calendarId', 'kind', 'etag', 'id', 'scope_type', 'scope_value','role']
-EVENTKEY = {'calendarId'}
+DICTKEY = ['calendarId', 'scope_type', 'scope_value','role', 'result']
+EVENTKEY = {'calendarId', 'scope_type', 'scope_value', 'role'}
 
 logging = init('acl')
 
@@ -47,32 +47,31 @@ def getResourceData(service, w, calendarId, EVENT):
 
         else:
             logging.info('get resource.')
-            if 'nextPageToken' in response:
-                pagetoken = response['nextPageToken']
-            else:
-                pagetoken = None
 
             # 各行書き込み
-            for data in response['items']:
-                w.writerow({'calendarId': calendarId,
-                            'kind': data['kind'],
-                            'etag': data['etag'],
-                            'id': data['id'],
-                            'scope_type': data['scope']['type'],
-                            'scope_value': data['scope']['value'],
-                            'role': data['role']})
-    except HttpError as error:
-        errcontent = json.loads(vars(error)['content'],encoding='UTF-8')['error']
-        if errcontent['errors'][0]['reason'] in ['notFound']:
             w.writerow({'calendarId': calendarId,
-                        'kind': 'notFound',
-                        'etag': '',
-                        'id': '',
-                        'scope_type': '',
-                        'scope_value': '',
-                        'role': ''})
-
-    return pagetoken
+                        'scope_type': response['scope']['type'],
+                        'scope_value': response['scope']['value'],
+                        'role': response['role'],
+                        'result': 'OK'})
+    except HttpError as error:
+        logging.debug(vars(error))
+        logging.debug(vars(error)['content'].decode('UTF-8'))
+        errcontent = None
+        if vars(error)['content'].decode('UTF-8') not in ['Not Found']:
+            errcontent = json.loads(vars(error)['content'],encoding='UTF-8')['error']
+        if errcontent != None and errcontent['errors'][0]['reason'] in ['cannotChangeOwnAcl']:
+            w.writerow({'calendarId': calendarId,
+                        'scope_type': EVENT['scope']['type'],
+                        'scope_value': EVENT['scope']['value'],
+                        'role': EVENT['role'],
+                        'result': 'NG:no access level'})
+        else:
+            w.writerow({'calendarId': calendarId,
+                        'scope_type': EVENT['scope']['type'],
+                        'scope_value': EVENT['scope']['value'],
+                        'role': EVENT['role'],
+                        'result': 'NG:else'})
 
 def Process(name):
     global RESOURCE
