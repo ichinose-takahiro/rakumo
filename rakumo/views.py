@@ -11,7 +11,7 @@ from rakumo.app.calendarGroupsMemberInsert import Process as gmaProcess
 from rakumo.app.calendarGroupsMemberDelete import Process as gmdProcess
 from rakumo.app.calendarAclList import Process as aclProcess
 from rakumo.app.calendarAclAdd import Process as aclaProcess
-from rakumo.app.calendarAclAdd import Process as acldProcess
+from rakumo.app.calendarAclDelete import Process as acldProcess
 from django import forms
 from django.http import HttpResponse
 from django.template import loader
@@ -219,17 +219,19 @@ def form(request):
             response = render(request, rform, {'error_message': 'ファイルに問題があります。'})
     elif postType == 'acl' or postType == 'aclAdd' or postType == 'aclDel':
         try:
-            logging.debug('postType acl output start')
             logging = setId(userId,username,logging,'acl')
             path = upload(request)
             aclpath = ''
             if postType == 'acl':
+                logging.debug('postType acllist start')
                 aclProcess(path)
                 aclpath = 'list_'
             elif postType == 'aclAdd':
+                logging.debug('postType acladd start')
                 aclaProcess(path)
                 aclpath = 'add_'
             else:
+                logging.debug('postType aclDel start')
                 acldProcess(path)
                 aclpath = 'del_'
 

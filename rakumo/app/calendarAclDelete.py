@@ -16,10 +16,10 @@ CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret_calendar.js
 APPLICATION_NAME = 'Directory API Python Quickstart'
 CSVFILE = '/var/www/html/mysite/rakumo/static/files/acl.csv'
 
-DICTKEY = ['calendarId', 'id', 'result']
-EVENTKEY = {'calendarId', 'id'}
+DICTKEY = ['calendarId', 'kind', 'etag', 'id', 'scope_type', 'scope_value','role', 'result']
+EVENTKEY = {'calendarId', 'kind', 'etag', 'id', 'scope_type', 'scope_value','role'}
 
-logging = init('acl')
+logging = init('acldel')
 
 "会議室データを取得"
 def getResource():
@@ -37,32 +37,25 @@ def csvToJson(csvData):
 def getResourceData(service, w, calendarId, ruleId):
 
     try:
-        response = service.acl().delete(calendarId=calendarId, ruleId=ruleId).execute()
+        service.acl().delete(calendarId=calendarId, ruleId=ruleId).execute()
 
-        logging.debug(response)
-        if not response:
-            logging.info('No acl delete in the domain.')
-
-        else:
-            logging.info('get resource.')
-
-            # 各行書き込み
-            w.writerow({'calendarId': calendarId,
-                        'ruleId': ruleId,
-                        'result': 'OK'})
+        logging.info('acl delete ok ::calendarId:' + calendarId + ' ruleId:' + ruleId)
+        # 各行書き込み
+        w.writerow({'calendarId': calendarId,
+                    'id': ruleId,
+                    'result': 'OK'})
     except HttpError as error:
-        logging.debug(vars(error))
-        logging.debug(vars(error)['content'].decode('UTF-8'))
+        logging.error(vars(error))
         errcontent = None
         if vars(error)['content'].decode('UTF-8') not in ['Not Found']:
             errcontent = json.loads(vars(error)['content'],encoding='UTF-8')['error']
         if errcontent != None and errcontent['errors'][0]['reason'] in ['cannotChangeOwnAcl']:
             w.writerow({'calendarId': calendarId,
-                        'ruleId': ruleId,
+                        'id': ruleId,
                        'result': 'NG:no access level'})
         else:
-            w.writerow({'calendarId': calendarId,
-                        'ruleId': ruleId,
+            w.writerow({'calendarId': '' if calendarId is None or len(calendarId) <= 0 else calendarId ,
+                        'id': '' if ruleId is None or len(ruleId) <= 0 else ruleId,
                         'result': 'NG:else'})
 
 def Process(name):
@@ -74,7 +67,7 @@ def getProcess():
 
     readList = getResource()
     doCheck(readList, EVENTKEY)
-    logging.info('Getting the first 10 acls in the domain')
+    logging.info('acl delete start')
 
     try:
         import argparse
@@ -131,7 +124,6 @@ def getProcess():
     w = csv.DictWriter(csvf, dictkey) # キーの取得
     w.writeheader() # ヘッダー書き込み
 
-    logging.debug('csv_writer_start')
     logging.debug(readList)
 
     for readData in readList:
@@ -139,11 +131,11 @@ def getProcess():
         logging.debug(readData)
 
         # 各行書き込み
-        getResourceData(app_admin_service, w, readData['calendarId'], readData['ruleId'])
+        getResourceData(app_admin_service, w, readData['calendarId'], readData['id'])
 
     csvf.close()
 
-    logging.debug('csv_writer_End')
+    logging.debug('acl delete End')
 
 if __name__ == '__main__':
     Process('/var/www/html/mysite/rakumo/static/files/upload/acllist_20180228174057.csv')

@@ -41,12 +41,12 @@ def getResourceData(service, w, calendarId, pagetoken, http):
     try:
         resourcedatas = service.acl().list(calendarId=calendarId, pageToken=pagetoken).execute()
 
-        logging.debug(resourcedatas)
+        logging.info(resourcedatas)
         if not resourcedatas:
             logging.info('No acl in the domain.')
 
         else:
-            logging.info('get resource.')
+            logging.info('get acl list.')
             if 'nextPageToken' in resourcedatas:
                 pagetoken = resourcedatas['nextPageToken']
             else:
@@ -62,6 +62,7 @@ def getResourceData(service, w, calendarId, pagetoken, http):
                             'scope_value': data['scope']['value'],
                             'role': data['role']})
     except HttpError as error:
+        logging.error(vars(error))
         errcontent = json.loads(vars(error)['content'],encoding='UTF-8')['error']
         if errcontent['errors'][0]['reason'] in ['notFound']:
             w.writerow({'calendarId': calendarId,
@@ -83,7 +84,7 @@ def getProcess():
 
     readList = getResource()
     doCheck(readList, EVENTKEY)
-    logging.info('Getting the first 10 acls in the domain')
+    logging.info('acl list start')
 
     try:
         import argparse
@@ -140,7 +141,6 @@ def getProcess():
     w = csv.DictWriter(csvf, dictkey) # キーの取得
     w.writeheader() # ヘッダー書き込み
 
-    logging.debug('csv_writer_start')
     logging.debug(readList)
 
     for readData in readList:
@@ -157,7 +157,7 @@ def getProcess():
 
     csvf.close()
 
-    logging.debug('csv_writer_End')
+    logging.info('acl list End')
 
 if __name__ == '__main__':
     Process('/var/www/html/mysite/rakumo/static/files/upload/acllist_20180228174057.csv')
