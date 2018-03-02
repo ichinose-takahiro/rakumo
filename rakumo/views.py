@@ -11,6 +11,7 @@ from rakumo.app.calendarGroupsMemberInsert import Process as gmaProcess
 from rakumo.app.calendarGroupsMemberDelete import Process as gmdProcess
 from rakumo.app.calendarAclList import Process as aclProcess
 from rakumo.app.calendarAclAdd import Process as aclaProcess
+from rakumo.app.calendarAclAdd import Process as acldProcess
 from django import forms
 from django.http import HttpResponse
 from django.template import loader
@@ -216,18 +217,25 @@ def form(request):
             response =  render(request, rform, {'error_message': 'ファイルがアップロードされていないか、内容に問題があります。'})
         except csv.Error as e:
             response = render(request, rform, {'error_message': 'ファイルに問題があります。'})
-    elif postType == 'acl' or postType == 'acladd':
+    elif postType == 'acl' or postType == 'aclAdd' or postType == 'aclDel':
         try:
             logging.debug('postType acl output start')
             logging = setId(userId,username,logging,'acl')
             path = upload(request)
+            aclpath = ''
             if postType == 'acl':
                 aclProcess(path)
-            else:
+                aclpath = 'list_'
+            elif postType == 'aclAdd':
                 aclaProcess(path)
+                aclpath = 'add_'
+            else:
+                acldProcess(path)
+                aclpath = 'del_'
+
             response = HttpResponse(open(DOWNLOAD_DIR + 'acl.csv', 'rb').read(),
                                     content_type="text/csv")
-            response["Content-Disposition"] = "filename=googleAclList_" + today + ".csv"
+            response["Content-Disposition"] = "filename=googleAclList_" + aclpath + today + ".csv"
             logging.debug('postType acl output end')
         except forms.ValidationError as e:
             response = render(request, rform, {'error_message': e.args[0]})
