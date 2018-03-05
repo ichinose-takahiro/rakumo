@@ -33,4 +33,5 @@ urlpatterns = [
         {'template_name': 'rakumo/logout.html'}, name='logout'),
     url(r'^static/(?P<path>.*)$', serve,
         {'document_root': os.path.join(os.path.dirname(__file__), 'static')}),
+    url('readme/', views.readme, name='readme'),
 ]

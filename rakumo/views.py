@@ -236,3 +236,7 @@ def upload(request):
         destination.write(chunk)
 
     return path
+
+@login_required
+def readme(request):
+    return request

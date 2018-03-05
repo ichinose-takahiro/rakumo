@@ -22,6 +22,7 @@ from apiclient.http import BatchHttpRequest
 import random
 import time
 from apiclient.errors import HttpError
+from google.oauth2 import service_account
 
 
 logging = init('calendarMain')
@@ -38,7 +39,8 @@ USERNOCSV = WORKDIR + 'userNotMigration.csv'
 RESOURCE = WORKDIR + 'resource_test_20180206.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
 CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
-CLIENT_SECRET_FILE = './json/client_secret.json'
+CLIENT_SECRET_FILE = 'var/www/html/mysite/rakumo/json/client_secret.json'
+SERVICE_ACCOUNT_FILE = 'var/www/html/mysite/rakumo/json/service_account.json'
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
 WORKLOG = WORKDIR + 'calendarList_'+TODAY+'.csv'
@@ -70,6 +72,19 @@ SCCOLOR = {'BLUE':'1', #MTG
 SCEDIT = {'NONE':'0',
           'SELF':'1',
           'GROUP':'2'}
+
+##DEBUG_ONLY
+USERADDRESS = [
+    'tobaru-hideyasu@919.jp','nishiyama-kohei@919.jp','inomata-toshiyuki@919.jp','takubo-hidenori@919.jp','koike-akihiro@919.jp',
+    'morimoto-hikaru@919.jp','sato-manami@919.jp','kan-sayuri@919.jp','mikami-takashi@919.jp','hama-yasuki@919.jp',
+    'hirata-naomi@919.jp','shiga-sakurako@919.jp','komagata-yukino@919.jp','kitabatake-yoshimi@919.jp','kaneda-yoko@919.jp',
+    'kimura-satoko@919.jp','noma-chinami@919.jp','kasai-kazuaki@919.jp','suzuki-yugo@919.jp','isomoto-miho@919.jp',
+    'nihonmatsu-yumeko@919.jp','saito-takamitsu@919.jp','iwasaki-sanae@919.jp','matsushita-atsushi@919.jp','matsumura-shun@919.jp',
+    'matsubara-kosuke@919.jp','miyamoto-tomomi@919.jp','horino-shunya@919.jp','hogan-nobutaka@919.jp','ishida-yuko@919.jp',
+    'yamaoka-yuina@919.jp','sato-sora@919.jp','ogawa-yoshiteru@919.jp','yoshida-hiroshi@919.jp','karasu-mikiko@919.jp',
+    'yamada-ryohei@919.jp','sakamoto-ayako@919.jp','nomura-miku@919.jp','nakahira-shinya@919.jp'
+]
+##DEBUG_ONLY
 
 def getmemberData():
     u"""getmemberData メンバーデータを取得する処理
@@ -536,7 +551,8 @@ def main():
     store = Storage(credential_path)
     creds = store.get()
     if not creds or creds.invalid:
-        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
+#        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
+        flow = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
         creds = tools.run_flow(flow, store, flags) \
               if flags else tools.run(flow, store)
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
