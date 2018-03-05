@@ -239,4 +239,4 @@ def upload(request):
 
 @login_required
 def readme(request):
-    return request
+    return render(request, 'rakumo/readme.html')

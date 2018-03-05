@@ -23,13 +23,16 @@ import random
 import time
 from apiclient.errors import HttpError
 from google.oauth2 import service_account
-
+import googleapiclient.discovery
+from apiclient.http import BatchHttpRequest
+import random
 
 logging = init('calendarMain')
 batchcount = 0
 batch = None
 okcnt = 0
 ngcnt = 0
+preEmail = ''
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
@@ -39,9 +42,9 @@ USERNOCSV = WORKDIR + 'userNotMigration.csv'
 RESOURCE = WORKDIR + 'resource_test_20180206.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
 CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
-CLIENT_SECRET_FILE = 'var/www/html/mysite/rakumo/json/client_secret.json'
-SERVICE_ACCOUNT_FILE = 'var/www/html/mysite/rakumo/json/service_account.json'
-SCOPES = 'https://www.googleapis.com/auth/calendar'
+CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
+SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
+SCOPES = ['https://www.googleapis.com/auth/calendar']
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
 WORKLOG = WORKDIR + 'calendarList_'+TODAY+'.csv'
 DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'transparency',
@@ -85,6 +88,13 @@ USERADDRESS = [
     'yamada-ryohei@919.jp','sakamoto-ayako@919.jp','nomura-miku@919.jp','nakahira-shinya@919.jp'
 ]
 ##DEBUG_ONLY
+
+def selectEmail():
+    global priEmail
+
+    priEmail = random.choice(USERADDRESS)
+
+    return priEmail
 
 def getmemberData():
     u"""getmemberData メンバーデータを取得する処理
@@ -448,12 +458,14 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     global batch
     global okcnt
     global ngcnt
+    global priEmail
     rtnFlg = False
 
     if batch is None:
         batch = service.new_batch_http_request(callback=insert_calendar)
     logging.debug('-----batchpara-------')
     #logging.debug(vars(batch))
+    logging.debug(priEmail)
     logging.debug(EVENT)
     if batchcount < 50:
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
@@ -466,7 +478,11 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
         for n in range(0, 20):  # 指数バックオフ(遅延処理対応)
 
             try:
+#SERVICEACCOUNT
+#                batch.execute()
+#SERVICEACCOUNT
                 batch.execute(http=http)
+                selectEmail()
                 rtnFlg = True
                 break
             except HttpError as error:
@@ -531,12 +547,13 @@ def init():
     okcnt = 0
     ngcnt = 0
 
-@jit
+#@jit
 def main():
     u""" main メイン処理
     メインで実行する処理
     :return: なし
     """
+    global preEmail
     #try:
     #import argparse
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
@@ -551,12 +568,14 @@ def main():
     store = Storage(credential_path)
     creds = store.get()
     if not creds or creds.invalid:
-#        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
-        flow = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
         creds = tools.run_flow(flow, store, flags) \
               if flags else tools.run(flow, store)
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
-
+#SERVICEACCOUNT
+#    credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+#    CAL = googleapiclient.discovery.build('calendar', 'v3', credentials=credentials)
+#SERVICEACCOUNT
     #csvf = codecs.open(WORKLOG, 'w')
     #w = csv.DictWriter(csvf, DICTKEY)  # キーの取得
     #w.writeheader()  # ヘッダー書き込み
@@ -578,6 +597,7 @@ def main():
     _ngcnt = 0    #global batch
     #batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
+    preEmail = selectEmail()
     for clData in clList:
         clData = json.loads(clData,encoding='UTF-8')
         memData = getMemberAddress(clData)
@@ -609,10 +629,15 @@ def main():
                     if 'recurrence' in EVENT.keys() and EVENT['recurrence'] != [ ]:
                         EVENT['recurrence'][0] = delHolidayData(EVENT['recurrence'][0], EVENT['recurrence'][1])
                     logging.debug(EVENT)
+                    logging.debug(preEmail)
                     #メールアドレスがないやつがあるので、取得せなならん
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
-                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
+#SERVICEACCOUNT
+#                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], credentials)
+#SERVICEACCOUNT
+                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, preEmail, creds.authorize(Http()))
+                    #_okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
                     recr_cnt = 0
                     logging.debug('------------------------------')
                     #logging.debug()
