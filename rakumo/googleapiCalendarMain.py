@@ -22,13 +22,17 @@ from apiclient.http import BatchHttpRequest
 import random
 import time
 from apiclient.errors import HttpError
-
+from google.oauth2 import service_account
+import googleapiclient.discovery
+from apiclient.http import BatchHttpRequest
+import random
 
 logging = init('calendarMain')
 batchcount = 0
 batch = None
 okcnt = 0
 ngcnt = 0
+preEmail = ''
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
@@ -38,8 +42,9 @@ USERNOCSV = WORKDIR + 'userNotMigration.csv'
 RESOURCE = WORKDIR + 'resource_test_20180206.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
 CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
-CLIENT_SECRET_FILE = './json/client_secret.json'
-SCOPES = 'https://www.googleapis.com/auth/calendar'
+CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
+SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
+SCOPES = ['https://www.googleapis.com/auth/calendar']
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
 WORKLOG = WORKDIR + 'calendarList_'+TODAY+'.csv'
 DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'transparency',
@@ -71,6 +76,26 @@ SCEDIT = {'NONE':'0',
           'SELF':'1',
           'GROUP':'2'}
 
+##DEBUG_ONLY
+USERADDRESS = [
+    'tobaru-hideyasu@919.jp','nishiyama-kohei@919.jp','inomata-toshiyuki@919.jp','takubo-hidenori@919.jp','koike-akihiro@919.jp',
+    'morimoto-hikaru@919.jp','sato-manami@919.jp','kan-sayuri@919.jp','mikami-takashi@919.jp','hama-yasuki@919.jp',
+    'hirata-naomi@919.jp','shiga-sakurako@919.jp','komagata-yukino@919.jp','kitabatake-yoshimi@919.jp','kaneda-yoko@919.jp',
+    'kimura-satoko@919.jp','noma-chinami@919.jp','kasai-kazuaki@919.jp','suzuki-yugo@919.jp','isomoto-miho@919.jp',
+    'nihonmatsu-yumeko@919.jp','saito-takamitsu@919.jp','iwasaki-sanae@919.jp','matsushita-atsushi@919.jp','matsumura-shun@919.jp',
+    'matsubara-kosuke@919.jp','miyamoto-tomomi@919.jp','horino-shunya@919.jp','hogan-nobutaka@919.jp','ishida-yuko@919.jp',
+    'yamaoka-yuina@919.jp','sato-sora@919.jp','ogawa-yoshiteru@919.jp','yoshida-hiroshi@919.jp','karasu-mikiko@919.jp',
+    'yamada-ryohei@919.jp','sakamoto-ayako@919.jp','nomura-miku@919.jp','nakahira-shinya@919.jp'
+]
+##DEBUG_ONLY
+
+def selectEmail():
+    global priEmail
+
+    priEmail = random.choice(USERADDRESS)
+
+    return priEmail
+
 def getmemberData():
     u"""getmemberData メンバーデータを取得する処理
     CSVからJSONデータを取得します。
@@ -95,7 +120,7 @@ def getNotMigrationData():
     memberData = csvToJson(USERNOCSV)
     return memberData
 
-#@jit
+@jit
 def checkExName(ret):
     u"""checkExName 名前が特殊なユーザー名を変更する処理
     :param ret: 対象データ
@@ -108,7 +133,7 @@ def checkExName(ret):
 
     return ret
 
-#@jit
+@jit
 def checkUseName(ret):
     u"""checkUseName 名前が特殊なユーザー名を変更する処理
     :param ret: 対象データ
@@ -121,7 +146,7 @@ def checkUseName(ret):
 
     return ret
 
-#@jit
+@jit
 def getMemberAddress(data):
     u"""getMemberAddress メンバーメールアドレス取得
     カレンダーデータからメンバーデータをチェックしてアドレスを抽出します
@@ -156,7 +181,7 @@ def getResource():
     """
     resourceData = csvToJson(RESOURCE)
     return resourceData
-#@jit
+@jit
 def getResourceAddress(data):
     u""" getResourceAddress 会議室メールアドレス取得
     カレンダーデータから会議室データをチェックしてアドレスを抽出します
@@ -177,7 +202,7 @@ def getcalendarData():
     """
     calendarData = csvToJson(CALENDARCSV)
     return calendarData
-#@jit
+@jit
 def getHolidayData(timedata):
     u""" getHolidayData 祝日データを取得
     CSVの祝日データからAPI実行用の文字列に変換して取得します。
@@ -215,7 +240,7 @@ def csvToJson(csvData):
             line_json = json.dumps(line, ensure_ascii=False)
             jsonData.append(line_json)
     return jsonData
-#@jit
+@jit
 def checkExData(clData):
     u""" checkExData 繰り返しデータの存在チェック
     カレンダーデータが繰り返し登録するデータかをチェックします。
@@ -237,7 +262,7 @@ def checkExData(clData):
             clData['SCE_DAY_YEARLY'] != STR_ZERO:
             ret = True
     return ret
-#@jit
+@jit
 def setExWeekly(clData):
     u""" setExWeekly 週ごとの設定を取得する
     カレンダーデータから、googleAPIに実行できる繰り返しデータを取得します。
@@ -273,7 +298,7 @@ def setExWeekly(clData):
         if bydayFlg == True: byday = byday + ','
         byday = byday + getWeeklyByDay(clData) + 'SA'
     return byday
-#@jit
+@jit
 def getWeeklyByDay(clData):
     u""" getWeeklyByDay 何週目の繰り返しかの値取得する処理
     毎月登録時の何週目に連続登録するかを設定します
@@ -287,7 +312,7 @@ def getWeeklyByDay(clData):
 def progress(p, l):
     sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
     sys.stdout.flush()
-#@jit
+@jit
 def createEvent(clData):
     u""" createEvent カレンダー入力データを作成
     カレンダーデータからGoogleAPIで実行するためのパラメータを設定する
@@ -433,38 +458,40 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     global batch
     global okcnt
     global ngcnt
+    global priEmail
     rtnFlg = False
 
     if batch is None:
         batch = service.new_batch_http_request(callback=insert_calendar)
-    #logging.debug('-----batchpara-------')
+    logging.debug('-----batchpara-------')
     #logging.debug(vars(batch))
-    #logging.debug(EVENT)
-    if batchcount < 25:
+    logging.debug(priEmail)
+    logging.debug(EVENT)
+    if batchcount < 50:
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
 
-    if batchcount >= 25 or lastFlg == True:
+    if batchcount >= 50 or lastFlg == True:
         logging.debug('batchexecute-------before---------------------')
 
-        for n in range(0, 10):  # 指数バックオフ(遅延処理対応)
+        for n in range(0, 20):  # 指数バックオフ(遅延処理対応)
 
             try:
-                logging.info(vars(batch))
-                for key, bal in vars(batch)['_requests'].items():
-                  logging.info('---request:'+key+'----')
-                  logging.debug(vars(bal))
+#SERVICEACCOUNT
+#                batch.execute()
+#SERVICEACCOUNT
                 batch.execute(http=http)
+                selectEmail()
                 rtnFlg = True
                 break
             except HttpError as error:
                 errcontent = json.loads(vars(error)['content'],encoding='UTF-8')['error']
                 if errcontent['errors'][0]['reason'] in ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']:
-                    logging.error('exponential backoff:' + str(n+1) + '回目:' + errcontent['errors'][0]['reason'])
+                    logging.debug('exponential backoff:' + str(n+1) + '回目:' + errcontent['errors'][0]['reason'])
                     time.sleep((2 ** n) + random.random())
                 else:
-                    logging.error('else error')
+                    logging.debug('else error')
                     raise error
 
         if rtnFlg != True:
@@ -481,29 +508,27 @@ def insert_calendar(request_id, response, exception):
     global okcnt
     global ngcnt
     if exception is None:
-        logging.info('callback----OK-------')
-        logging.info('request_id:'+str(request_id) + ' response:' + str(response) )
+        logging.debug('callback----OK-------')
+        logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
         writeObj.writerow(response)
         okcnt = okcnt + 1
         pass
     else:
         exc_content = json.loads(vars(exception)['content'], encoding='UTF-8')['error']
         if str(exc_content['code']) == '410' and exc_content['errors'][0]['reason'] == 'deleted':
-            logging.worn('callback----OK-------')
-            logging.worn('request_id:' + str(request_id) + ' reason:deleted')
+            logging.debug('callback----OK-------')
+            logging.debug('request_id:' + str(request_id) + ' reason:deleted')
             ngcnt = ngcnt + 1
             pass
         else:
-            logging.error('callback----NG-------')
-            logging.debug(response)
-            logging.debug(vars(exception))
-            logging.error('request_id:' + str(request_id) + ' exception:' + str(vars(exception)['content']))
+            logging.debug('callback----NG-------')
+            logging.debug('request_id:' + str(request_id) + ' exception:' + str(vars(exception)['content']))
             # Do something with the response
             raise exception
     return response
 
 
-#@jit
+@jit
 def delHolidayData(exdate, rdate):
     exdatestr = exdate.replace('EXDATE;TZID=%s:' % GMT_PLACE, "")
     exdateList = exdatestr.split(',')
@@ -528,6 +553,7 @@ def main():
     メインで実行する処理
     :return: なし
     """
+    global preEmail
     #try:
     #import argparse
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
@@ -538,7 +564,7 @@ def main():
     if not os.path.exists(credential_dir):
         os.makedirs(credential_dir)
     credential_path = os.path.join(credential_dir,
-                                   'calendar-quickstart.json')
+                                   'python-quickstart.json')
     store = Storage(credential_path)
     creds = store.get()
     if not creds or creds.invalid:
@@ -546,7 +572,10 @@ def main():
         creds = tools.run_flow(flow, store, flags) \
               if flags else tools.run(flow, store)
     CAL = build('calendar', 'v3', http=creds.authorize(Http()))
-
+#SERVICEACCOUNT
+#    credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+#    CAL = googleapiclient.discovery.build('calendar', 'v3', credentials=credentials)
+#SERVICEACCOUNT
     #csvf = codecs.open(WORKLOG, 'w')
     #w = csv.DictWriter(csvf, DICTKEY)  # キーの取得
     #w.writeheader()  # ヘッダー書き込み
@@ -568,6 +597,7 @@ def main():
     _ngcnt = 0    #global batch
     #batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
+    preEmail = selectEmail()
     for clData in clList:
         clData = json.loads(clData,encoding='UTF-8')
         memData = getMemberAddress(clData)
@@ -598,14 +628,18 @@ def main():
                     #繰り返しデータより追加するデータから削除対象のデータを取り除く
                     if 'recurrence' in EVENT.keys() and EVENT['recurrence'] != [ ]:
                         EVENT['recurrence'][0] = delHolidayData(EVENT['recurrence'][0], EVENT['recurrence'][1])
-                    #logging.debug(EVENT)
+                    logging.debug(EVENT)
+                    logging.debug(preEmail)
                     #メールアドレスがないやつがあるので、取得せなならん
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
+#SERVICEACCOUNT
+#                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], credentials)
+#SERVICEACCOUNT
+                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, preEmail, creds.authorize(Http()))
                     #_okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
-                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, 'appsadmin@919.jp', creds.authorize(Http()))
                     recr_cnt = 0
-                    #logging.debug('------------------------------')
+                    logging.debug('------------------------------')
                     #logging.debug()
                     #w.writerow(ref)
                     EVENT = createEvent(clData)
@@ -616,11 +650,11 @@ def main():
         else:
             # 移行対象ではないユーザ
             if memData['useFlg'] == False:
-                logging.warn('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                logging.debug('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
                 noUseCnt = noUseCnt + 1
             # 移行できなかったユーザー
             elif memData['retFlg'] == False:
-                logging.warn('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                logging.debug('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
                 noMigCnt = noMigCnt + 1
             else:
                 logging.warn('ERRORMEMDATA=' + memData)
@@ -634,7 +668,7 @@ def main():
     #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
     #    EVENT['recurrence'][2] = EVENT['recurrence'][2] + ';UNTIL=' + EVENT['enddate']
     # 最後の一つは必ず実行する
-    logging.info('------------end----------------')
+    logging.debug('------------end----------------')
     if memData is not None:
         _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
@@ -645,12 +679,12 @@ def main():
     #except ValueError as e:
     #    logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
     #    logging.debug('ERROR END')
-    logging.info('CSVFILE:' + WORKLOG)
-    logging.info('calendarMigration END count:'+str(cnt))
-    logging.info('noUseCnt:' + str(noUseCnt))
-    logging.info('noMigCnt:' + str(noMigCnt))
-    logging.info('OK CNT:' + str(_okcnt))
-    logging.info('NG CNT:' + str(_ngcnt))
+    logging.debug('CSVFILE:' + WORKLOG)
+    logging.debug('calendarMigration END count:'+str(cnt))
+    logging.debug('noUseCnt:' + str(noUseCnt))
+    logging.debug('noMigCnt:' + str(noMigCnt))
+    logging.debug('OK CNT:' + str(_okcnt))
+    logging.debug('NG CNT:' + str(_ngcnt))
 
 if __name__ == '__main__':
 

@@ -4,6 +4,7 @@
 {% block title %}googleデータ取得{% endblock title %}
 {% block content %}
     <h1 class="mdc-typography--display1">G-Suiteデータ管理ツール</h1>
+    <a href="{% url 'rakumo:logout' %}">ログアウト</a>
     <!--<button type="button" class="mdc-button mdc-button--raised mdc-button--primary">
       Press Me
     </button>-->
@@ -20,7 +21,9 @@
     <font color="red">{{error_message}}</font>
 
     <section class="demo-typography--section">
-	<div style="padding:30px;border:1px solid #cccccc;overflow:hidden;">
+        <h3>メンバー周り(グループとその所属)の情報取得、編集</h3>
+        <a href="{% url 'rakumo:readme' %}#member">read me</a>
+	    <div style="padding:30px;border:1px solid #cccccc;overflow:hidden;">
         {{info_message}}
         <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left; position:relative">
             <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">グループリスト取得</p>
@@ -57,7 +60,7 @@
             </form>
         </div>
 
-         <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left">
+        <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left">
             <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:65px;margin-top:0;padding-top:15px;border:1px solid #cccccc;">グループメンバー更新<br>テンプレート取得</p>
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -66,18 +69,54 @@
             </form>
         </div>
 
-          <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left;">
+        <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left;">
             <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">メンバーリスト取得</p>
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type='hidden' name='postType' value='user'>
                 <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary" style="margin-top:20px;">CSVダウンロード</button>
             </form>
-          </div>
-    </div>
+        </div>
+        </div>
+    </section>
+    <div style="clear:float"></div>
+    <section class="demo-typography--section" style="margin:10px 0;">
+        <h3>権限周り(カレンダーの閲覧、編集(代理入力など)権限)の情報取得、編集</h3>
+        <a href="{% url 'rakumo:readme' %}#acl">read me</a>
+        <div style="padding:30px;border:1px solid #cccccc;overflow:hidden;">
+        <div class="mdc-card" style="text-align:center;margin:10px; width:280px;height:200px; float:left">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">権限リスト取得</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='file' name='file' maxlength="50" style="width:240px; margin-bottom:20px;">
+                <input type='hidden' name='postType' value='acl'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">CSVダウンロード</button>
+            </form>
+        </div>
+        <div class="mdc-card" style="text-align:center;margin:10px; width:280px;height:200px; float:left">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">権限追加、更新</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='file' name='file' maxlength="50" style="width:240px; margin-bottom:20px;">
+                <input type='hidden' name='postType' value='aclAdd'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">取り込み実行</button>
+            </form>
+        </div>
+        <div class="mdc-card" style="text-align:center;margin:10px; width:280px;height:200px; float:left">
+            <p class="mdc-card--p mdc-theme--primary-light-bg" style="height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">権限削除</p>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type='file' name='file' maxlength="50" style="width:240px; margin-bottom:20px;">
+                <input type='hidden' name='postType' value='aclDel'>
+                <button type="submit" class="mdc-button mdc-button--raised mdc-button--primary">取り込み実行</button>
+            </form>
+        </div>
+        </div>
     </section>
 <div style="clear:float"></div>
     <section class="demo-typography--section" style="margin:10px 0;">
+        <h3>施設周り(会議室、備品、車など)の情報取得、更新</h3>
+        <a href="{% url 'rakumo:readme' %}#resource">read me</a>
         <div style="padding:30px;border:1px solid #cccccc;overflow:hidden;">
         <div class="mdc-card" style="text-align:center;margin:10px; width:200px;height:200px; float:left;">
             <p class="mdc-card--p mdc-theme--secondary-dark-bg" style="color:#ffffff;height:50px;margin-top:0;padding-top:30px;border:1px solid #cccccc;">施設リスト取得</p>
