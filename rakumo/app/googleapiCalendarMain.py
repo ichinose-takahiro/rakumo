@@ -47,7 +47,7 @@ SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
 WORKLOG = WORKDIR + 'calendarList_'+TODAY+'.csv'
-DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'transparency',
+DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'location', 'transparency',
            'creator', 'organizer', 'start', 'end', 'recurrence', 'visibility', 'iCalUID', 'sequence', 'attendees',
            'extendedProperties', 'reminders', 'overrides']
 #HEADER = {'Content-Type': 'multipart/mixed; boundary=BOUNDARY'}
