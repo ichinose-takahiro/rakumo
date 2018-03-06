@@ -20,11 +20,11 @@ from googleapiclient.discovery import build
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest
 from django.http import HttpResponseRedirect
-from rakumo.models import CredentialsModel
+#from rakumo.models import CredentialsModel
 from mysite import settings
-from oauth2client.contrib import xsrfutil
-from oauth2client.client import flow_from_clientsecrets
-from oauth2client.contrib.django_util.storage import DjangoORMStorage
+#from oauth2client.contrib import xsrfutil
+#from oauth2client.client import flow_from_clientsecrets
+#from oauth2client.contrib.django_util.storage import DjangoORMStorage
 from rakumo.app.loginglibrary import init,setId
 import csv
 # CLIENT_SECRETS, name of a file containing the OAuth 2.0 information for this
@@ -34,10 +34,10 @@ import csv
 #logging = init('view1.py')
 UPLOADE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/upload/'
 DOWNLOAD_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
-FLOW = flow_from_clientsecrets(
-    settings.GOOGLE_OAUTH2_CLIENT_SECRETS_JSON,
-    scope=['https://www.googleapis.com/auth/plus.me','https://www.googleapis.com/auth/admin.directory.user'],
-    redirect_uri='http://localhost:8000/oauth2callback')
+#FLOW = flow_from_clientsecrets(
+#    settings.GOOGLE_OAUTH2_CLIENT_SECRETS_JSON,
+#    scope=['https://www.googleapis.com/auth/plus.me','https://www.googleapis.com/auth/admin.directory.user'],
+#    redirect_uri='http://localhost:8000/oauth2callback')
 
 @login_required
 def index(request):
@@ -78,15 +78,16 @@ def auth_return(request):
 @login_required
 def form(request):
     logging = None
-    storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
-    credential = storage.get()
-    if credential is None or credential.invalid == True:
-        FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,request.user)
-        authorize_url = FLOW.step1_get_authorize_url()
-        return HttpResponseRedirect(authorize_url)
-
-    logging = None
-    userId = dict(credential.id_token)['sub']
+    #storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
+    #credential = storage.get()
+    #if credential is None or credential.invalid == True:
+    #    FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,request.user)
+    #    authorize_url = FLOW.step1_get_authorize_url()
+    #    return HttpResponseRedirect(authorize_url)
+    #
+    #logging = None
+    #userId = dict(credential.id_token)['sub']
+    userId = ''
     username = str(vars(request.user)['_wrapped'])
     logging = setId(userId,username,logging,'view1.py')
     logging.info('form_request')
