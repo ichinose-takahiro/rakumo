@@ -1,0 +1,5 @@
+mysite/__pycache__/
+rakumo/app/__pycache__/
+rakumo/__pycache__/
+rakumo/static/files/user.csv
+db.sqlite3
