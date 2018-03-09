@@ -23,14 +23,19 @@ DICTKEY =['kind','etag','id','status','htmlLink','created','updated','summary',
           'hangoutLink','conferenceData','gadget','anyoneCanAddSelf','guestsCanInviteOthers',
           'guestsCanModify','guestsCanSeeOtherGuests','privateCopy','locked','reminders','source','attachments']
 logging = init('calendarList')
+##DEBUG_ONLY
+USERADDRESS = [    'tobaru-hideyasu@919.jp','nishiyama-kohei@919.jp','inomata-toshiyuki@919.jp','takubo-hidenori@919.jp','koike-akihiro@919.jp',    'morimoto-hikaru@919.jp','sato-manami@919.jp','kan-sayuri@919.jp','mikami-takashi@919.jp','hama-yasuki@919.jp',    'hirata-naomi@919.jp','shiga-sakurako@919.jp','komagata-yukino@919.jp','kitabatake-yoshimi@919.jp','kaneda-yoko@919.jp',    'kimura-satoko@919.jp','noma-chinami@919.jp','kasai-kazuaki@919.jp','suzuki-yugo@919.jp','isomoto-miho@919.jp',    'nihonmatsu-yumeko@919.jp','saito-takamitsu@919.jp','iwasaki-sanae@919.jp','matsushita-atsushi@919.jp','matsumura-shun@919.jp',    'matsubara-kosuke@919.jp','miyamoto-tomomi@919.jp','horino-shunya@919.jp','hogan-nobutaka@919.jp','ishida-yuko@919.jp',    'yamaoka-yuina@919.jp','sato-sora@919.jp','ogawa-yoshiteru@919.jp','yoshida-hiroshi@919.jp','karasu-mikiko@919.jp',
+    'yamada-ryohei@919.jp','sakamoto-ayako@919.jp','nomura-miku@919.jp','nakahira-shinya@919.jp'
+]
+##DEBUG_ONLY
 
-def getApiData(service, dictkey, csvf, w, pagetoken):
+def getApiData(service, dictkey, csvf, w, pagetoken, calendarId):
     logging.debug('Getting the first 10 data in the domain')
     #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
     #results = service.users().list(customer='my_customer', orderBy='email', pageToken=pagetoken).execute()
 
 
-    calendarList = service.events().list(calendarId='ichinose-takahiro@919.jp', pageToken=pagetoken, maxResults=2500).execute()
+    calendarList = service.events().list(calendarId=calendarId, pageToken=pagetoken, maxResults=2500).execute()
 
     if not calendarList:
         logging.debug('No calendar in the domain.')
@@ -111,11 +116,12 @@ def main():
     # 各行書き込み
     pagetoken = None
     cnt = 0
-    while cnt < 10000:
-        pagetoken = getApiData(CAL, dictkey, csvf, w, pagetoken)
-        if pagetoken is None:
-            break
-        cnt = cnt+1
+    for address in USERADDRESS:
+        while cnt < 10000:
+            pagetoken = getApiData(CAL, dictkey, csvf, w, pagetoken, address)
+            if pagetoken is None:
+                break
+            cnt = cnt+1
 #    resourcedatas = app_admin_service.resources().calendars().list(customer='my_customer').execute()
     # print(resourcedatas)
     logging.debug('csv_writer_start')

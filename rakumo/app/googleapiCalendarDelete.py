@@ -75,7 +75,9 @@ CALENDARCSVS = [
 #'calendarList_20180202174409.csv',
 #'calendarList_20180206105032.csv'
 #'calendarList_20180305181050.csv'
-'calendarList_20180306132230.csv'
+#'calendarList_20180306132230.csv'
+#'calendarList_20180307103700.csv'
+'calendarList_20180307122655.csv'
 ]
 @jit
 def getCalendarData(calendacsv):
@@ -124,12 +126,12 @@ def bachExecute(EVENT, service, http, lastFlg = None):
         batch = service.new_batch_http_request(callback=delete_calendar)
     logging.debug('-----batchpara-------')
     logging.debug(EVENT)
-    if batchcount < 100:
+    if batchcount < 50:
         batch.add(service.events().delete(calendarId=EVENT['organizer'], eventId=EVENT['id']))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
 
-    if batchcount >= 100 or lastFlg == True:
+    if batchcount >= 50 or lastFlg == True:
         logging.debug('batchexecute-------before---------------------')
 
         for n in range(0, 10):  # 指数バックオフ(遅延処理対応)

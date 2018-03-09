@@ -32,7 +32,8 @@ batchcount = 0
 batch = None
 okcnt = 0
 ngcnt = 0
-preEmail = ''
+priEmail = ''
+pricnt = 0
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
@@ -41,7 +42,8 @@ USEREXCSV = WORKDIR + 'userUnique.csv'
 USERNOCSV = WORKDIR + 'userNotMigration.csv'
 RESOURCE = WORKDIR + 'resource_test_20180206.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
-CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
+#CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
+CALENDARCSV = WORKDIR + '180308_GroupSession_test.csv'
 CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
 SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -91,8 +93,12 @@ USERADDRESS = [
 
 def selectEmail():
     global priEmail
+    global pricnt
 
-    priEmail = random.choice(USERADDRESS)
+    priEmail = USERADDRESS[pricnt]
+    pricnt = pricnt + 1
+    if pricnt == len(USERADDRESS):
+        pricnt = 0
 
     return priEmail
 
@@ -147,7 +153,7 @@ def checkUseName(ret):
     return ret
 
 @jit
-def getMemberAddress(data):
+def getMemberAddress(data, memdata = None):
     u"""getMemberAddress メンバーメールアドレス取得
     カレンダーデータからメンバーデータをチェックしてアドレスを抽出します
     :param data: カレンダーデータ
@@ -168,7 +174,10 @@ def getMemberAddress(data):
                 ret['email'] = memberData['primaryEmail']
                 flg1 = True
             if memberData['fullName'] == ret['priName']:
-                ret['pri_email'] = memberData['primaryEmail']
+                if memdata is None:
+                    ret['pri_email'] = memberData['primaryEmail']
+                else:
+                    ret['pri_email'] = memdata['pri_email']
                 flg2 = True
             if flg1 == True and flg2 == True:
                 ret['retFlg'] = True
@@ -402,9 +411,9 @@ def createEvent(clData):
     if memData != {}:
         EVENT['attendees'].append({'email': memData['email'],'responseStatus':'accepted'})
     if resData is not None:
-        EVENT['attendees'].append({'email': memData['pri_email'],'responseStatus':'accepted'}) # 会議室の重複予約対応
-        memData['pre_email'] = resData
-        # EVENT['attendees'].append({'email': resData,'responseStatus':'accepted'}) # 会議室を追加
+    #    EVENT['attendees'].append({'email': memData['pri_email'],'responseStatus':'accepted'}) # 会議室の重複予約対応
+    #    memData['pri_email'] = resData
+         EVENT['attendees'].append({'email': resData,'responseStatus':'accepted'}) # 会議室を追加
 
     # 繰り返し設定。RRULE設定についてはRFC-5545を参考とする
     # https://tools.ietf.org/html/rfc5545
@@ -451,7 +460,7 @@ def createEvent(clData):
         if clData['SCE_MONTH_YEARLY'] != STR_ZERO and clData['SCE_DAY_YEARLY'] != STR_ZERO:
             #EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEALY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + clData['SCE_DAY'] + ';INTERVAL=1'
             EVENT['recurrence'][2] = EVENT['recurrence'][2] + 'FREQ=YEARLY;BYMONTH=' + clData['SCE_MONTH_YEARLY'] + ';BYMONTHDAY=' + (clData['SCE_DAY_YEARLY'] if clData['SCE_DAY_YEARLY'] != '99' else '-1') + ';INTERVAL=1;UNTIL=' + endDate
-    return EVENT
+    return EVENT,memData['pri_email']
 
 def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     global batchcount
@@ -466,7 +475,8 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     logging.debug('-----batchpara-------')
     #logging.debug(vars(batch))
     logging.debug(priEmail)
-    logging.debug(EVENT)
+    logging.debug(calendarId)
+    #logging.debug(EVENT)
     if batchcount < 50:
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
@@ -553,7 +563,7 @@ def main():
     メインで実行する処理
     :return: なし
     """
-    global preEmail
+    global priEmail
     #try:
     #import argparse
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
@@ -597,10 +607,10 @@ def main():
     _ngcnt = 0    #global batch
     #batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
-    preEmail = selectEmail()
+    priEmail = selectEmail()
     for clData in clList:
         clData = json.loads(clData,encoding='UTF-8')
-        memData = getMemberAddress(clData)
+        memData = getMemberAddress(clData, memData)
         if memData['retFlg'] == True and memData['useFlg'] == True:
             # 同じグループのデータを取得してまとめて登録する
             if EVENT != [] :
@@ -610,7 +620,9 @@ def main():
                     # resourceDataのチェックと挿入
                     resAddress = getResourceAddress(clData)
                     if {'email': resAddress,'responseStatus':'accepted'} not in EVENT['attendees'] and resAddress is not None:
-                        EVENT['attendees'].append({'email': resAddress})
+                        EVENT['attendees'].append({'email': resAddress,'responseStatus':'accepted'})
+                    #elif resAddress is not None:
+                    #    memData['pri_email'] = resAddress
                     cnt = cnt + 1
                     continue
                 #elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']
@@ -629,24 +641,24 @@ def main():
                     if 'recurrence' in EVENT.keys() and EVENT['recurrence'] != [ ]:
                         EVENT['recurrence'][0] = delHolidayData(EVENT['recurrence'][0], EVENT['recurrence'][1])
                     logging.debug(EVENT)
-                    logging.debug(preEmail)
+                    logging.debug(memData['pri_email'])
+                    logging.debug(priEmail)
                     #メールアドレスがないやつがあるので、取得せなならん
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
 #SERVICEACCOUNT
 #                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], credentials)
 #SERVICEACCOUNT
-                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, preEmail, creds.authorize(Http()))
-                    #_okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
+                    #_okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()))
+                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
                     recr_cnt = 0
                     logging.debug('------------------------------')
                     #logging.debug()
                     #w.writerow(ref)
-                    EVENT = createEvent(clData)
+                    EVENT, memData['pri_email'] = createEvent(clData)
             else:
                 #初回データの取得
-                EVENT = createEvent(clData)
-
+                EVENT, memData['pri_email'] = createEvent(clData)
         else:
             # 移行対象ではないユーザ
             if memData['useFlg'] == False:
