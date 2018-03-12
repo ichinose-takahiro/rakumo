@@ -25,6 +25,7 @@ from apiclient.errors import HttpError
 logging = init('calendar')
 batchcount = 0
 batch = None
+priEmail = None
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
@@ -126,12 +127,12 @@ def bachExecute(EVENT, service, http, lastFlg = None):
         batch = service.new_batch_http_request(callback=delete_calendar)
     logging.debug('-----batchpara-------')
     logging.debug(EVENT)
-    if batchcount < 50:
+    if batchcount < 50 and lastFlg != 'change':
         batch.add(service.events().delete(calendarId=EVENT['organizer'], eventId=EVENT['id']))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
 
-    if batchcount >= 50 or lastFlg == True:
+    if batchcount >= 50 or lastFlg == True or lastFlg == 'change':
         logging.debug('batchexecute-------before---------------------')
 
         for n in range(0, 10):  # 指数バックオフ(遅延処理対応)
@@ -199,6 +200,7 @@ def main():
     """
     #try:
     #import argparse
+    global priEmail
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
     #except ImportError:
     #    flags = None
@@ -228,6 +230,9 @@ def main():
             logging.debug('LINECNT:'+ str(cnt+1))
             #try:
                 #ref = CAL.events().delete(calendarId=event['organizer'], eventId=event['id']).execute()
+            if priEmail != event['organizer']:
+                _okcnt, _ngcnt = bachExecute(event, CAL, priEmail, creds.authorize(Http()), 'change')
+                priEmail = event['organizer']
             if(cnt < len(clList) - 1):
                 _okcnt, _ngcnt = bachExecute(event, CAL, creds.authorize(Http()))
             else:

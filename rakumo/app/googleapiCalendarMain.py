@@ -477,12 +477,12 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     logging.debug(priEmail)
     logging.debug(calendarId)
     #logging.debug(EVENT)
-    if batchcount < 50:
+    if batchcount < 50 and lastFlg != 'change':
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
 
-    if batchcount >= 50 or lastFlg == True:
+    if batchcount >= 50 or lastFlg == True or lastFlg == 'change':
         logging.debug('batchexecute-------before---------------------')
 
         for n in range(0, 20):  # 指数バックオフ(遅延処理対応)
@@ -649,6 +649,11 @@ def main():
 #SERVICEACCOUNT
 #                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], credentials)
 #SERVICEACCOUNT
+                    # 入れ替えのタイミングなので、先に実行してから次にいく。
+                    if priEmail != memData['pri_email']:
+                        _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()), 'change')
+                        priEmail = memData['pri_email']
+
                     #_okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()))
                     _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
                     recr_cnt = 0
@@ -682,6 +687,9 @@ def main():
     # 最後の一つは必ず実行する
     logging.debug('------------end----------------')
     if memData is not None:
+        # 最後の一つ前と最後のメンバーが違う場合は先に実行する。
+        if priEmail != memData['pri_email']:
+            _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()), 'change')
         _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
     #ref = CAL.events().insert(calendarId='ichinose-takahiro@919.jp', conferenceDataVersion=1, sendNotifications=False, body=EVENT).execute()
