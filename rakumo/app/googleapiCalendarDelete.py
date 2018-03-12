@@ -25,7 +25,7 @@ from apiclient.errors import HttpError
 logging = init('calendar')
 batchcount = 0
 batch = None
-priEmail = None
+priEmail = ''
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
@@ -78,7 +78,14 @@ CALENDARCSVS = [
 #'calendarList_20180305181050.csv'
 #'calendarList_20180306132230.csv'
 #'calendarList_20180307103700.csv'
-'calendarList_20180307122655.csv'
+#'calendarList_20180307122655.csv'
+#'calendarList_20180312163028.csv',
+#'calendarList_20180312163338.csv',
+#'calendarList_20180312164021.csv',
+'calendarList_20180312120728.csv',
+#'calendarList_20180312153349.csv',
+#'calendarList_20180312164155.csv',
+#'calendarList_20180312165930.csv',
 ]
 @jit
 def getCalendarData(calendacsv):
@@ -114,7 +121,7 @@ def progress(p, l):
     sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
     sys.stdout.flush()
 
-def bachExecute(EVENT, service, http, lastFlg = None):
+def bachExecute(EVENT, service,calendarId, http, lastFlg = None):
     global batchcount
     global batch
     global okcnt
@@ -128,7 +135,7 @@ def bachExecute(EVENT, service, http, lastFlg = None):
     logging.debug('-----batchpara-------')
     logging.debug(EVENT)
     if batchcount < 50 and lastFlg != 'change':
-        batch.add(service.events().delete(calendarId=EVENT['organizer'], eventId=EVENT['id']))
+        batch.add(service.events().delete(calendarId=calendarId, eventId=EVENT['id']))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
 
@@ -192,7 +199,7 @@ def init():
     global ngcnt
     okcnt = 0
     ngcnt = 0
-@jit
+#@jit
 def main():
     u""" main メイン処理
     メインで実行する処理
@@ -227,16 +234,21 @@ def main():
         clList= getCalendarData(WORKDIR + calendarcsv)
         logging.debug('------calendarDataDelete start------')
         for event in clList:
+            #event = json.loads(event,encoding='UTF-8')
             logging.debug('LINECNT:'+ str(cnt+1))
             #try:
                 #ref = CAL.events().delete(calendarId=event['organizer'], eventId=event['id']).execute()
+            if priEmail == '':
+                priEmail = event['organizer']
             if priEmail != event['organizer']:
+                logging.debug('organizer:' + event['organizer'])
                 _okcnt, _ngcnt = bachExecute(event, CAL, priEmail, creds.authorize(Http()), 'change')
                 priEmail = event['organizer']
+
             if(cnt < len(clList) - 1):
-                _okcnt, _ngcnt = bachExecute(event, CAL, creds.authorize(Http()))
+                _okcnt, _ngcnt = bachExecute(event, CAL,event['organizer'], creds.authorize(Http()))
             else:
-                _okcnt, _ngcnt = bachExecute(event, CAL, creds.authorize(Http()),True)
+                _okcnt, _ngcnt = bachExecute(event, CAL,event['organizer'], creds.authorize(Http()),True)
             #except Exception as e:
             #    logging.debug(format(e))
 

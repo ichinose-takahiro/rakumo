@@ -43,7 +43,8 @@ USERNOCSV = WORKDIR + 'userNotMigration.csv'
 RESOURCE = WORKDIR + 'resource_test_20180206.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
-CALENDARCSV = WORKDIR + '180308_GroupSession_test.csv'
+#CALENDARCSV = WORKDIR + '180308_GroupSession_test.csv'
+CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
 CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
 SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -503,7 +504,7 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
 #                batch.execute()
 #SERVICEACCOUNT
                 batch.execute(http=http)
-                selectEmail()
+                #selectEmail()
                 rtnFlg = True
                 break
             except HttpError as error:
@@ -618,7 +619,8 @@ def main():
     _ngcnt = 0    #global batch
     #batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
-    priEmail = selectEmail()
+    #priEmail = selectEmail()
+    #for clData in sorted(clList, key=lambda x:(x[15]+x[16],x[3],x[4],x[1])):
     for clData in clList:
         clData = json.loads(clData,encoding='UTF-8')
         memData = getMemberAddress(clData, memData)
@@ -661,6 +663,8 @@ def main():
 #                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], credentials)
 #SERVICEACCOUNT
                     # 入れ替えのタイミングなので、先に実行してから次にいく。
+                    if priEmail == '':
+                        priEmail = memData['pri_email']
                     if priEmail != memData['pri_email']:
                         _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()), 'change')
                         priEmail = memData['pri_email']
