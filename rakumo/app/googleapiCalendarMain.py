@@ -164,7 +164,7 @@ def getMemberAddress(data, memdata = None):
     flg2 = False
     membarName = data['SEI'] + data['MEI']
     priName = data['PRISEI']+data['PRIMEI']
-    ret = {'name': membarName, 'priName': priName, 'retFlg': False, 'useFlg':True}
+    ret = {'name': membarName, 'priName': priName, 'retFlg': False, 'useFlg':True, 'priFlg':True}
     ret = checkUseName(ret)
     if ret['useFlg'] == True:
         ret = checkExName(ret)
@@ -182,6 +182,15 @@ def getMemberAddress(data, memdata = None):
             if flg1 == True and flg2 == True:
                 ret['retFlg'] = True
                 break
+    if flg1 == False or flg2 == False:
+        logging.debug('flg1:'+str(flg1))
+        logging.debug('flg2:'+str(flg2))
+        if flg1 == True:
+            ret['pri_email'] = ret['email']
+            ret['retFlg'] = True
+            ret['priFlg'] = False
+        else:
+            ret = None
     return ret
 def getResource():
     u""" getResource 会議室データを取得
@@ -330,6 +339,8 @@ def createEvent(clData):
     """
     # 名前のチェック
     memData = getMemberAddress(clData)
+    if memData is None:
+        return [], None
     # 会議室のチェック
     if clData['RESOURCE'] != 'null':
         resData = getResourceAddress(clData)
@@ -611,10 +622,10 @@ def main():
     for clData in clList:
         clData = json.loads(clData,encoding='UTF-8')
         memData = getMemberAddress(clData, memData)
-        if memData['retFlg'] == True and memData['useFlg'] == True:
+        if memData is not None and memData['retFlg'] == True and memData['useFlg'] == True:
             # 同じグループのデータを取得してまとめて登録する
             if EVENT != [] :
-                if gid == clData['SCD_GRP_SID'] and clData['SCD_GRP_SID'] != '-1':
+                if gid == clData['SCD_GRP_SID'] and clData['SCD_GRP_SID'] != '-1' and memData['priFlg'] == True:
                     if {'email': memData['email'],'responseStatus':'accepted'} not in EVENT['attendees']:
                         EVENT['attendees'].append({'email': memData['email']})
                     # resourceDataのチェックと挿入
@@ -626,7 +637,7 @@ def main():
                     cnt = cnt + 1
                     continue
                 #elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']
-                elif checkExData(clData) == True and clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID'] and recr_cnt <= 30:
+                elif checkExData(clData) == True and clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID'] and recr_cnt <= 30 and memData['priFlg'] == True:
                     EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('/','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
                     #enddate = clData['ENDDATE'][0:10].replace('-','')
                     #if int(EVENT['enddate']) < int(enddate):
@@ -663,20 +674,26 @@ def main():
                     EVENT, memData['pri_email'] = createEvent(clData)
             else:
                 #初回データの取得
+                recr_cnt = 0
                 EVENT, memData['pri_email'] = createEvent(clData)
         else:
-            # 移行対象ではないユーザ
-            if memData['useFlg'] == False:
-                logging.debug('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
-                noUseCnt = noUseCnt + 1
-            # 移行できなかったユーザー
-            elif memData['retFlg'] == False:
-                logging.debug('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
-                noMigCnt = noMigCnt + 1
+            if memData is not None:
+                # 移行対象ではないユーザ
+                if memData['useFlg'] == False:
+                    logging.warn('NoUseUser!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                    noUseCnt = noUseCnt + 1
+                # 移行できなかったユーザー
+                elif memData['retFlg'] == False:
+                    logging.warn('DoNotMigrationData!!=lineNO:'+ str(cnt) +' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData['SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + '] NAME:' + memData['name'] + ' PRINAME:' + memData['priName'])
+                    noMigCnt = noMigCnt + 1
+                else:
+                    logging.warn('ERRORMEMDATA=' + memData)
+                    logging.warn('ERRORCALDATA=' + clData)
+                    raise(ValueError("memDataerror!"))
             else:
-                logging.warn('ERRORMEMDATA=' + memData)
-                logging.warn('ERRORCALDATA=' + clData)
-                raise(ValueError("memDataerror!"))
+                logging.warn(
+                    'NoUser!!=lineNO:' + str(cnt) + ' SCD_SID[' + clData['SCD_SID'] + '] SCE_SID[' + clData[
+                        'SCE_SID'] + '] SCD_GRP_SID[' + clData['SCD_GRP_SID'] + ']')
         gid = clData['SCD_GRP_SID']
         eid = clData['SCE_SID']
         sid = clData['SCD_SID']
