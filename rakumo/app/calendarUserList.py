@@ -25,7 +25,7 @@ SCOPES = 'https://www.googleapis.com/auth/admin.directory.user'
 CLIENT_SECRET_FILE = './json/client_secret.json'
 APPLICATION_NAME = 'Directory API Python Quickstart'
 CSVFILE = '/var/www/html/mysite/rakumo/static/files/user.csv'
-DICTKEY = ['primaryEmail', 'fullName']
+DICTKEY = ['primaryEmail', 'fullName','sei','mei']
 
 
 def get_credentials():
@@ -74,7 +74,7 @@ def getUserData(service, dictkey, csvf, w, pagetoken):
 
         # 各行書き込み
         for user in users:
-            w.writerow({'primaryEmail':user['primaryEmail'],'fullName':user['name']['fullName']})
+            w.writerow({'primaryEmail':user['primaryEmail'],'fullName':user['name']['fullName'], 'sei':user['name']['familyName'],'mei':user['name']['givenName']})
 
     return pagetoken
 
