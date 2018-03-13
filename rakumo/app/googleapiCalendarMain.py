@@ -44,7 +44,8 @@ RESOURCE = WORKDIR + 'resource_test_20180206.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
 #CALENDARCSV = WORKDIR + '180308_GroupSession_test.csv'
-CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
+#CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
+CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180313_r_2.csv'
 CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
 SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -356,22 +357,17 @@ def createEvent(clData):
         # 開始日設定
         EVENT['start'] = {'date': eventStartDate}
         # 終了日設定1日足す
-        #eventEndDate = clData['ENDDATE'][0:10]
         if clData['STARTDATE'][0:10] == eventEndDate:
-            #eventEndDate = eventEndDate.replace('/', '-')
             eventEndDate = str(datetime.datetime.strptime(eventEndDate,"%Y-%m-%d") + datetime.timedelta(days=1))[0:10]
         EVENT['end'] = {'date': eventEndDate}
     else:
         # 開始日設定
         EVENT['start'] = {
-            # 'dateTime': '2014-05-26T13:00:00%s' % GMT_OFF,
-            #'dateTime': clData['STARTDATE'][0:10] + 'T' + clData['STARTDATE'][11:19] + GMT_OFF,
             'dateTime': eventStartDate + 'T' + clData['STARTDATE'][11:19] + GMT_OFF,
             'timeZone': GMT_PLACE
         }
         # 終了日設定
         EVENT['end'] = {
-            # 'dateTime': '2014-05-26T14:00:00%s' % GMT_OFF,
             'dateTime': eventEndDate + 'T' + clData['ENDDATE'][11:19] + GMT_OFF,
             'timeZone': GMT_PLACE
         }
@@ -382,7 +378,6 @@ def createEvent(clData):
         description.append(clData['BIKO'])
     EVENT['description'] = '\n'.join(description)
     # 色設定　色の設定からどのミーティングかを割り出す
-    #EVENT['colorId'] = clData['COLORID']
     if clData['COLORID'] == SCCOLOR['RED']:
         EVENT['extendedProperties'] = {'shared':{'eventType':'important'}}
     elif clData['COLORID'] == SCCOLOR['YELLOW']:
@@ -423,15 +418,12 @@ def createEvent(clData):
     if memData != {}:
         EVENT['attendees'].append({'email': memData['email'],'responseStatus':'accepted'})
     if resData is not None:
-    #    EVENT['attendees'].append({'email': memData['pri_email'],'responseStatus':'accepted'}) # 会議室の重複予約対応
-    #    memData['pri_email'] = resData
          EVENT['attendees'].append({'email': resData,'responseStatus':'accepted'}) # 会議室を追加
 
     # 繰り返し設定。RRULE設定についてはRFC-5545を参考とする
     # https://tools.ietf.org/html/rfc5545
-    startDate = clData['STARTDATE'][0:10].replace('/','')
-    endDate = clData['ENDDATE'][0:10].replace('/','')
-    #EVENT['enddate'] = ''
+    startDate = clData['STARTDATE'][0:10].replace('-','')
+    endDate = clData['ENDDATE'][0:10].replace('-','')
     startTime = clData['STARTDATE'][11:19].replace(':','')
     EVENT['recurrence'] = [ ]
     ## 繰り返しデータのチェック
@@ -485,10 +477,7 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     if batch is None:
         batch = service.new_batch_http_request(callback=insert_calendar)
     logging.debug('-----batchpara-------')
-    #logging.debug(vars(batch))
-    logging.debug(priEmail)
     logging.debug(calendarId)
-    #logging.debug(EVENT)
     if batchcount < 50 and lastFlg != 'change':
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
@@ -620,32 +609,45 @@ def main():
     #batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
     #priEmail = selectEmail()
-    #for clData in sorted(clList, key=lambda x:(x[15]+x[16],x[3],x[4],x[1])):
     for clData in clList:
         clData = json.loads(clData,encoding='UTF-8')
         memData = getMemberAddress(clData, memData)
+        #logging.debug(memData)
         if memData is not None and memData['retFlg'] == True and memData['useFlg'] == True:
             # 同じグループのデータを取得してまとめて登録する
             if EVENT != [] :
                 if gid == clData['SCD_GRP_SID'] and clData['SCD_GRP_SID'] != '-1' and memData['priFlg'] == True:
-                    if {'email': memData['email'],'responseStatus':'accepted'} not in EVENT['attendees']:
-                        EVENT['attendees'].append({'email': memData['email']})
+                    if {'email': memData['email'], 'responseStatus': 'accepted'} not in EVENT['attendees']:
+                        EVENT['attendees'].append({'email': memData['email'],'responseStatus':'accepted'})
                     # resourceDataのチェックと挿入
                     resAddress = getResourceAddress(clData)
                     if {'email': resAddress,'responseStatus':'accepted'} not in EVENT['attendees'] and resAddress is not None:
-                        EVENT['attendees'].append({'email': resAddress,'responseStatus':'accepted'})
+                        EVENT['attendees'].append({'email': resAddress, 'responseStatus': 'accepted'})
                     #elif resAddress is not None:
                     #    memData['pri_email'] = resAddress
                     cnt = cnt + 1
+                    gid = clData['SCD_GRP_SID']
+                    eid = clData['SCE_SID']
+                    sid = clData['SCD_SID']
                     continue
                 #elif clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID']
                 elif checkExData(clData) == True and clData['SCE_SID'] != STR_MONE and eid == clData['SCE_SID'] and recr_cnt <= 30 and memData['priFlg'] == True:
-                    EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('/','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
+                    if {'email': memData['email'], 'responseStatus': 'accepted'} not in EVENT['attendees']:
+                        EVENT['attendees'].append({'email': memData['email'],'responseStatus':'accepted'})
+                    # resourceDataのチェックと挿入
+                    resAddress = getResourceAddress(clData)
+                    if {'email': resAddress,'responseStatus':'accepted'} not in EVENT['attendees'] and resAddress is not None:
+                        EVENT['attendees'].append({'email': resAddress, 'responseStatus': 'accepted'})
+
+                    EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('-','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
                     #enddate = clData['ENDDATE'][0:10].replace('-','')
                     #if int(EVENT['enddate']) < int(enddate):
                     #    EVENT['enddate'] = enddate
                     cnt = cnt + 1
                     recr_cnt = recr_cnt + 1
+                    gid = clData['SCD_GRP_SID']
+                    eid = clData['SCE_SID']
+                    sid = clData['SCD_SID']
                     continue
                 else:
                     #if 'enddate' in EVENT and len(EVENT['enddate']) > 0:
@@ -673,8 +675,6 @@ def main():
                     _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
                     recr_cnt = 0
                     logging.debug('------------------------------')
-                    #logging.debug()
-                    #w.writerow(ref)
                     EVENT, memData['pri_email'] = createEvent(clData)
             else:
                 #初回データの取得
@@ -714,8 +714,6 @@ def main():
         _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
     #ref = CAL.events().insert(calendarId='ichinose-takahiro@919.jp', conferenceDataVersion=1, sendNotifications=False, body=EVENT).execute()
-    #logging.debug(ref)
-    #writeObj.writerow(ref)
     progress(cnt-1, len(clList))
     #except ValueError as e:
     #    logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
