@@ -37,55 +37,42 @@ okcnt = 0
 ngcnt = 0
 
 CALENDARCSVS = [
-#'calendarList_20180131164834.csv',
-#'calendarList_20180131165134.csv',
-#'calendarList_20180131175136.csv', #end
-#'calendarList_20180131185652.csv', #end
-#'calendarList_20180131190202.csv', #end
-#'calendarList_20180201133539.csv', #end
-#'calendarList_20180201140123.csv', #end
-#'calendarList_20180201141441.csv', #end
-#'calendarList_20180201150804.csv', #end
-#'calendarList_20180201151342.csv', #end
-#'calendarList_20180201154603.csv', #end
-#'calendarList_20180201154707.csv', #end
-#'calendarList_20180201154848.csv', #end
-#'calendarList_20180201155158.csv', #end
-#'calendarList_20180201160906.csv', #end
-#'calendarList_20180201161130.csv', #end
-#'calendarList_20180201162219.csv', #end
-#'calendarList_20180201163435.csv', #end
-#'calendarList_20180201163914.csv', #end
-#'calendarList_20180201164337.csv', #end
-#'calendarList_20180201164440.csv', #end
-#'calendarList_20180201164815.csv', #end
-#'calendarList_20180201165311.csv', #end
-#'calendarList_20180201170346.csv', #end
-#'calendarList_20180201170551.csv', #end
-#'calendarList_20180201171225.csv', #end
-#'calendarList_20180201171315.csv', #end
-#'calendarList_20180201171616.csv', #end
-#'calendarList_20180201172137.csv', #end
-#'calendarList_20180201172644.csv', #end
-#'calendarList_20180202110319.csv', #end
-#'calendarList_20180202112739.csv', #end
-#'calendarList_20180202113228.csv',
-#'calendarList_20180202115103.csv',
-#'calendarList_20180202120343.csv',
-#'calendarList_20180202130013.csv',
-#'calendarList_20180202174409.csv',
-#'calendarList_20180206105032.csv'
 #'calendarList_20180305181050.csv'
 #'calendarList_20180306132230.csv'
 #'calendarList_20180307103700.csv'
 #'calendarList_20180307122655.csv'
 #'calendarList_20180312163028.csv',
 #'calendarList_20180312163338.csv',
-#'calendarList_20180312164021.csv',
-'calendarList_20180312120728.csv',
+#'calendarList_20180312164021.csv',END
+#'calendarList_20180312120728.csv',
 #'calendarList_20180312153349.csv',
 #'calendarList_20180312164155.csv',
 #'calendarList_20180312165930.csv',
+#'calendarList_20180313114418.csv',
+#'calendarList_20180313134020.csv',
+#'calendarList_20180313155146.csv',
+#'calendarList_20180313161119.csv',
+#'calendarList_20180313161828.csv',
+#'calendarList_20180308111040.csv',
+#'calendarList_20180308111720.csv',
+#'calendarList_20180308111820.csv',
+#'calendarList_20180308111904.csv',
+#'calendarList_20180308152510.csv'
+#'calendarList_20180308163812.csv',
+#'calendarList_20180308164131.csv',
+#'calendarList_20180308172902.csv',
+#'calendarList_20180308173120.csv',
+#'calendarList_20180308173231.csv',
+#'calendarList_20180308174122.csv',
+#'calendarList_20180308175514.csv',
+#'calendarList_20180308175749.csv',
+#'calendarList_20180308185334.csv',
+#'calendarList_20180309170736.csv',
+#'calendarList_20180309170827.csv',
+#'calendarList_20180309170913.csv',
+#'calendarList_20180309171201.csv',
+#'calendarList_20180309172637.csv',
+'calendarList_20180313171301.csv',
 ]
 @jit
 def getCalendarData(calendacsv):
@@ -118,7 +105,10 @@ def csvToJson(csvData):
 
 @jit
 def progress(p, l):
-    sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
+    if l > 1:
+        sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
+    else:
+        sys.stdout.write("\r%d / 100" %(int(p * 100 / (1))))
     sys.stdout.flush()
 
 def bachExecute(EVENT, service,calendarId, http, lastFlg = None):
@@ -189,10 +179,6 @@ def delete_calendar(request_id, response, exception):
             # Do something with the response
             raise exception
     return response
-
-def progress(p, l):
-    sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
-    sys.stdout.flush()
 
 def init():
     global okcnt

@@ -39,7 +39,7 @@ def getResourceData(service, w, calendarId, EVENT):
     logging.info('Getting the first 10 acls in the domain')
     
     try:
-        response = service.acl().insert(calendarId=calendarId,sendNotifications='false',body=EVENT).execute()
+        response = service.acl().insert(calendarId=calendarId,sendNotifications=False,body=EVENT).execute()
 
         logging.info(response)
         if not response:
