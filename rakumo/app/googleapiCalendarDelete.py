@@ -37,42 +37,8 @@ okcnt = 0
 ngcnt = 0
 
 CALENDARCSVS = [
-#'calendarList_20180305181050.csv'
-#'calendarList_20180306132230.csv'
-#'calendarList_20180307103700.csv'
-#'calendarList_20180307122655.csv'
-#'calendarList_20180312163028.csv',
-#'calendarList_20180312163338.csv',
-#'calendarList_20180312164021.csv',END
-#'calendarList_20180312120728.csv',
-#'calendarList_20180312153349.csv',
-#'calendarList_20180312164155.csv',
-#'calendarList_20180312165930.csv',
-#'calendarList_20180313114418.csv',
-#'calendarList_20180313134020.csv',
-#'calendarList_20180313155146.csv',
-#'calendarList_20180313161119.csv',
-#'calendarList_20180313161828.csv',
-#'calendarList_20180308111040.csv',
-#'calendarList_20180308111720.csv',
-#'calendarList_20180308111820.csv',
-#'calendarList_20180308111904.csv',
-#'calendarList_20180308152510.csv'
-#'calendarList_20180308163812.csv',
-#'calendarList_20180308164131.csv',
-#'calendarList_20180308172902.csv',
-#'calendarList_20180308173120.csv',
-#'calendarList_20180308173231.csv',
-#'calendarList_20180308174122.csv',
-#'calendarList_20180308175514.csv',
-#'calendarList_20180308175749.csv',
-#'calendarList_20180308185334.csv',
-#'calendarList_20180309170736.csv',
-#'calendarList_20180309170827.csv',
-#'calendarList_20180309170913.csv',
-#'calendarList_20180309171201.csv',
-#'calendarList_20180309172637.csv',
-'calendarList_20180313171301.csv',
+##'calendarList_20180309172637.csv',
+'calendarList_20180315162536_api_delete.csv'
 ]
 @jit
 def getCalendarData(calendacsv):
@@ -81,12 +47,20 @@ def getCalendarData(calendacsv):
     :return: JSONデータ
     """
     calendarData = csvToJson(calendacsv)
+    logging.debug(len(calendarData))
     eventidList = []
     for data in calendarData:
         data = json.loads(data, encoding='UTF-8')
+        if data['status'] != 'cancelled':
+            organizer = ast.literal_eval(data['organizer'])
+            if 'email' in organizer:
+                eventidList.append({'id':data['id'],'organizer':organizer['email']})
+            if data['attendees'] != '':
+                attendees = ast.literal_eval(data['attendees'])
+                for attendee in attendees:
+                    if attendee['responseStatus'] == 'accepted' and organizer['email'] != attendee['email']:
+                        eventidList.append({'id':data['id'],'organizer':attendee['email']})
 
-        eventidList.append({'id':data['id'],'organizer':ast.literal_eval(data['organizer'])['email']})
- #       eventidList.append({'id':data['id'],'organizer':data['organizer']})
 
     return eventidList
 
@@ -123,7 +97,6 @@ def bachExecute(EVENT, service,calendarId, http, lastFlg = None):
     if batch is None:
         batch = service.new_batch_http_request(callback=delete_calendar)
     logging.debug('-----batchpara-------')
-    logging.debug(EVENT)
     if batchcount < 50 and lastFlg != 'change':
         batch.add(service.events().delete(calendarId=calendarId, eventId=EVENT['id']))
         batchcount = batchcount + 1
@@ -172,10 +145,16 @@ def delete_calendar(request_id, response, exception):
             logging.debug('callback----OK-------')
             logging.debug('request_id:'+str(request_id) + ' reason:deleted' )
             ngcnt = ngcnt + 1
+            pass
+        elif str(exc_content['code']) == '404' and exc_content['errors'][0]['reason'] == 'notFound':
+            logging.debug('callback----OK-------')
+            logging.debug('request_id:'+str(request_id) + ' reason:NOTFOUND' )
+            ngcnt = ngcnt + 1
             pass            
         else:
             logging.debug('callback----NG-------')
             logging.debug('request_id:'+str(request_id) + ' exception:' + str(vars(exception)['content']) )
+            
             # Do something with the response
             raise exception
     return response
@@ -227,7 +206,6 @@ def main():
             if priEmail == '':
                 priEmail = event['organizer']
             if priEmail != event['organizer']:
-                logging.debug('organizer:' + event['organizer'])
                 _okcnt, _ngcnt = bachExecute(event, CAL, priEmail, creds.authorize(Http()), 'change')
                 priEmail = event['organizer']
 

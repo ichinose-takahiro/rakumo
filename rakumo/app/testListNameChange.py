@@ -7,8 +7,9 @@ import json
 
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
-CALENDARCSV = WORKDIR + '180206_GroupSession.csv'
-CSVFILE = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
+#CALENDARCSV = WORKDIR + '180206_GroupSession.csv'
+CALENDARCSV = WORKDIR + '180314_GroupSession.csv'
+CSVFILE = WORKDIR + '180314_GroupSession_change.csv'
 USERCSV = WORKDIR + 'user.csv'
 USEREXCSV = WORKDIR + 'userUnique.csv'
 pricnt = 0
@@ -105,6 +106,7 @@ def getMemberAddress(data, memdata = None):
     memberName = data['SEI'] + data['MEI']
     priName = data['PRISEI']+data['PRIMEI']
     ret = {'name': memberName, 'priName': priName, 'retFlg': False}
+    logging.debug(ret)
     ret = checkExName(ret)
     logging.debug(ret)
     for memberData in getmemberData():
@@ -122,6 +124,8 @@ def getMemberAddress(data, memdata = None):
         logging.debug('flg2:'+str(flg2))
         if flg1 == True:
            ret['pri_email'] = ret['email']
+        elif flg2 == True:
+           ret['email'] = ret['pri_email']
         else:
            ret = None
     #logging.debug(memberName)
@@ -149,10 +153,11 @@ def getProcess():
 
     for clData in clList:
         logging.debug(str(pricnt)+':'+str(memcnt))
-        clData = json.loads(clData,encoding='UTF-8')
+        clData = json.loads(clData,encoding='utf-8')
         writeData = clData
         memData = getMemberAddress(clData)
         if memData is None:
+            logging.warn('not name:::::SCD_SID:'+ writeData['SCD_SID'])
             continue
         logging.debug(memData)
         if priEmail != memData['pri_email']:

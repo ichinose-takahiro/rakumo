@@ -45,7 +45,7 @@ HOLIDAY = WORKDIR + 'holiday.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
 #CALENDARCSV = WORKDIR + '180308_GroupSession_test.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
-CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180313_r_2.csv'
+CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180313_r.csv'
 CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
 SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -191,6 +191,10 @@ def getMemberAddress(data, memdata = None):
             ret['pri_email'] = ret['email']
             ret['retFlg'] = True
             ret['priFlg'] = False
+        elif flg2 == True:
+            ret['email'] = ret['pri_email']
+            ret['retFlg'] = True
+            ret['priFlg'] = True
         else:
             ret = None
     return ret

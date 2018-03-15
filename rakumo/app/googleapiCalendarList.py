@@ -15,7 +15,7 @@ SCOPES = 'https://www.googleapis.com/auth/calendar'
 CLIENT_SECRET_FILE = './json/client_secret.json'
 APPLICATION_NAME = 'Directory API Python Quickstart'
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
-CSVFILE = WORKDIR + 'calendarList_'+TODAY+'.csv'
+CSVFILE = WORKDIR + 'calendarList_'+TODAY+'_api.csv'
 DICTKEY =['kind','etag','id','status','htmlLink','created','updated','summary',
           'description','location','colorId','creator','organizer','start','end',
           'endTimeUnspecified','recurrence','recurringEventId','originalStartTime','transparency',
@@ -122,8 +122,6 @@ def main():
             if pagetoken is None:
                 break
             cnt = cnt+1
-#    resourcedatas = app_admin_service.resources().calendars().list(customer='my_customer').execute()
-    # print(resourcedatas)
     logging.debug('csv_writer_start')
 
 

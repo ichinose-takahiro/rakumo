@@ -160,4 +160,5 @@ def getProcess():
     logging.info('acl list End')
 
 if __name__ == '__main__':
+
     Process('/var/www/html/mysite/rakumo/static/files/upload/acllist_20180228174057.csv')
