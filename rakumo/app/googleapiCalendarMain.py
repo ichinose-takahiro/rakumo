@@ -137,8 +137,8 @@ def checkExName(ret):
     for memberData in getExMemberData():
         memberData = json.loads(memberData,encoding='UTF-8')
         if ret['name'] == memberData['NAME']:
+            logging.info('changeName!!:'+ret['name']+'→'+memberData['EXNAME'])
             ret['name'] = memberData['EXNAME']
-
     return ret
 
 @jit
@@ -151,6 +151,7 @@ def checkUseName(ret):
         memberData = json.loads(memberData,encoding='UTF-8')
         if ret['name'] == memberData['NAME']:
             ret['useFlg'] = False
+            logging.info('NotUse!!:'+ret['name'])
 
     return ret
 
