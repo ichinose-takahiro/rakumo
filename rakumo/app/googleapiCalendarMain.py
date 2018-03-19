@@ -34,6 +34,8 @@ okcnt = 0
 ngcnt = 0
 priEmail = ''
 pricnt = 0
+execMember = {}
+
 
 "固定値の設定"
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
@@ -45,7 +47,7 @@ HOLIDAY = WORKDIR + 'holiday.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
 #CALENDARCSV = WORKDIR + '180308_GroupSession_test.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
-CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180313_r.csv'
+CALENDARCSV = WORKDIR + '180314_GroupSession_change_r_test.csv'
 CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
 SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -149,9 +151,11 @@ def checkUseName(ret):
     """
     for memberData in getNotMigrationData():
         memberData = json.loads(memberData,encoding='UTF-8')
-        if ret['name'] == memberData['NAME']:
+        #logging.debug(ret['name'])
+        #logging.debug(memberData['NAME'])
+        if ret['name'] == memberData['NAME'] or ret['priName'] == memberData['NAME']:
             ret['useFlg'] = False
-            logging.info('NotUse!!:'+ret['name'])
+            break
 
     return ret
 
@@ -185,19 +189,30 @@ def getMemberAddress(data, memdata = None):
             if flg1 == True and flg2 == True:
                 ret['retFlg'] = True
                 break
-    if flg1 == False or flg2 == False:
-        logging.debug('flg1:'+str(flg1))
-        logging.debug('flg2:'+str(flg2))
-        if flg1 == True:
-            ret['pri_email'] = ret['email']
-            ret['retFlg'] = True
-            ret['priFlg'] = False
-        elif flg2 == True:
-            ret['email'] = ret['pri_email']
-            ret['retFlg'] = True
-            ret['priFlg'] = True
-        else:
-            ret = None
+
+        if flg1 == False or flg2 == False:
+            #logging.debug('name:'+ret['name'])
+            #logging.debug('priName:'+ret['priName'])
+            #logging.debug('flg1:'+str(flg1))
+            #logging.debug('flg2:'+str(flg2))
+            if flg1 == True:
+                ret['pri_email'] = ret['email']
+                ret['retFlg'] = True
+                ret['priFlg'] = False
+                logging.info('NotPriName name:'+ret['name']+' priName:'+ret['priName'])
+            elif flg2 == True:
+                ret['email'] = ret['pri_email']
+                ret['retFlg'] = True
+                ret['priFlg'] = True
+                logging.info('NotName name:'+ret['name']+' priName:'+ret['priName'])
+            else:
+                ret = None
+                logging.info('NotPriName,Name:'+ret['name']+' priName:'+ret['priName'])
+    else:
+        logging.info('NotUse!!name:'+ret['name']+' priName:'+ret['priName'])
+        ret = None
+
+
     return ret
 def getResource():
     u""" getResource 会議室データを取得
@@ -338,16 +353,17 @@ def progress(p, l):
     sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
     sys.stdout.flush()
 @jit
-def createEvent(clData):
+def createEvent(clData, memData=None):
     u""" createEvent カレンダー入力データを作成
     カレンダーデータからGoogleAPIで実行するためのパラメータを設定する
     :param clData: カレンダーデータ
     :return: GoogleAPI実行イベントデータ
     """
     # 名前のチェック
-    memData = getMemberAddress(clData)
     if memData is None:
-        return [], None
+        memData = getMemberAddress(clData)
+    #if memData is None:
+    #    return [], None
     # 会議室のチェック
     if clData['RESOURCE'] != 'null':
         resData = getResourceAddress(clData)
@@ -420,7 +436,7 @@ def createEvent(clData):
     #    {'email': 'ichinose-takahiro@919.jp'},
     #    {'email': '919.jp_353739393539393532@resource.calendar.google.com'}
     ]
-    if memData != {}:
+    if memData is not None:
         EVENT['attendees'].append({'email': memData['email'],'responseStatus':'accepted'})
     if resData is not None:
          EVENT['attendees'].append({'email': resData,'responseStatus':'accepted'}) # 会議室を追加
@@ -528,6 +544,11 @@ def insert_calendar(request_id, response, exception):
         logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
         writeObj.writerow(response)
         okcnt = okcnt + 1
+        organizer = ast.literal_eval(response['organizer'])
+        if organizer['email'] in execMember
+            execMember[organizer['email']]['cnt'] = execMember[organizer['email']]['cnt'] + 1
+        else
+            execMember[organizer['email']] = {'cnt': 0}
         pass
     else:
         exc_content = json.loads(vars(exception)['content'], encoding='UTF-8')['error']
@@ -608,13 +629,14 @@ def main():
     memData = None
     recr_cnt = 0
     init()
-    cnt = 0
+    #cnt = 0
     _okcnt = 0
     _ngcnt = 0    #global batch
     #batch = CAL.new_batch_http_request(callback=insert_calendar)
     #try:
     #priEmail = selectEmail()
     for clData in clList:
+        logging.info('csvRowCount:'+str(cnt))
         clData = json.loads(clData,encoding='UTF-8')
         memData = getMemberAddress(clData, memData)
         #logging.debug(memData)
@@ -661,8 +683,8 @@ def main():
                     if 'recurrence' in EVENT.keys() and EVENT['recurrence'] != [ ]:
                         EVENT['recurrence'][0] = delHolidayData(EVENT['recurrence'][0], EVENT['recurrence'][1])
                     logging.debug(EVENT)
-                    logging.debug(memData['pri_email'])
-                    logging.debug(priEmail)
+                    #logging.debug(memData['pri_email'])
+                    #logging.debug(priEmail)
                     #メールアドレスがないやつがあるので、取得せなならん
                     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
                     #ref = CAL.events().insert(calendarId='appsadmin@919.jp', conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
@@ -680,11 +702,11 @@ def main():
                     _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
                     recr_cnt = 0
                     logging.debug('------------------------------')
-                    EVENT, memData['pri_email'] = createEvent(clData)
+                    EVENT, memData['pri_email'] = createEvent(clData, memData)
             else:
                 #初回データの取得
                 recr_cnt = 0
-                EVENT, memData['pri_email'] = createEvent(clData)
+                EVENT, memData['pri_email'] = createEvent(clData, memData)
         else:
             if memData is not None:
                 # 移行対象ではないユーザ
@@ -723,12 +745,15 @@ def main():
     #except ValueError as e:
     #    logging.debug('Exception=lineNO:'+ str(cnt) +' SCD_SID[' + str(sid) + '] SCE_SID[' + str(eid) + '] SCD_GRP_SID[' + str(gid) + ']:' + 'ERROR:',e.args)
     #    logging.debug('ERROR END')
-    logging.debug('CSVFILE:' + WORKLOG)
-    logging.debug('calendarMigration END count:'+str(cnt))
-    logging.debug('noUseCnt:' + str(noUseCnt))
-    logging.debug('noMigCnt:' + str(noMigCnt))
-    logging.debug('OK CNT:' + str(_okcnt))
-    logging.debug('NG CNT:' + str(_ngcnt))
+    logging.info('CSVFILE:' + WORKLOG)
+    logging.info('calendarMigration END count:'+str(cnt))
+    logging.info('noUseCnt:' + str(noUseCnt))
+    logging.info('noMigCnt:' + str(noMigCnt))
+    logging.info('OK CNT:' + str(_okcnt))
+    logging.info('NG CNT:' + str(_ngcnt))
+    logging.info('---exec member count----')
+    for key, value in execMember:
+        logging.info(key+':'str(value))
 
 if __name__ == '__main__':
 
