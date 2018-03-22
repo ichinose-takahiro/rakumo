@@ -120,14 +120,15 @@ def getMemberAddress(data, memdata = None):
         if flg1 == True and flg2 == True:
             break
     if flg1 == False or flg2 == False:
-        logging.debug('flg1:'+str(flg1))
-        logging.debug('flg2:'+str(flg2))
-        if flg1 == True:
-           ret['pri_email'] = ret['email']
-        elif flg2 == True:
-           ret['email'] = ret['pri_email']
-        else:
-           ret = None
+        ret = None
+        #logging.debug('flg1:'+str(flg1))
+        #logging.debug('flg2:'+str(flg2))
+        #if flg1 == True:
+        #   ret['pri_email'] = ret['email']
+        #elif flg2 == True:
+        #   ret['email'] = ret['pri_email']
+        #else:
+        #   ret = None
     #logging.debug(memberName)
     #logging.debug(priName)
     logging.debug(ret)

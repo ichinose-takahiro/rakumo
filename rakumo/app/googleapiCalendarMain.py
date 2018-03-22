@@ -26,6 +26,7 @@ from google.oauth2 import service_account
 import googleapiclient.discovery
 from apiclient.http import BatchHttpRequest
 import random
+import ast
 
 logging = init('calendarMain')
 batchcount = 0
@@ -47,7 +48,8 @@ HOLIDAY = WORKDIR + 'holiday.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
 #CALENDARCSV = WORKDIR + '180308_GroupSession_test.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
-CALENDARCSV = WORKDIR + '180314_GroupSession_change_r_test.csv'
+#CALENDARCSV = WORKDIR + '180314_GroupSession_change_r_test.csv'
+CALENDARCSV = WORKDIR + '180314_GroupSession_change_wpd_r.csv'
 CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
 SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -181,10 +183,10 @@ def getMemberAddress(data, memdata = None):
                 ret['email'] = memberData['primaryEmail']
                 flg1 = True
             if memberData['fullName'] == ret['priName']:
-                if memdata is None:
-                    ret['pri_email'] = memberData['primaryEmail']
-                else:
-                    ret['pri_email'] = memdata['pri_email']
+                #if memdata is None:
+                ret['pri_email'] = memberData['primaryEmail']
+                #else:
+                #    ret['pri_email'] = memdata['pri_email']
                 flg2 = True
             if flg1 == True and flg2 == True:
                 ret['retFlg'] = True
@@ -445,12 +447,21 @@ def createEvent(clData, memData=None):
     # https://tools.ietf.org/html/rfc5545
     startDate = clData['STARTDATE'][0:10].replace('-','')
     endDate = clData['ENDDATE'][0:10].replace('-','')
+    #if clData['SCD_DAILY'] == STR_ONE:
+    #    endDate = str(datetime.datetime.strptime(clData['ENDDATE'][0:10],"%Y-%m-%d") + datetime.timedelta(days=1))[0:10].replace('-','')
+    #    logging.debug('changeAllDate'+clData['ENDDATE'][0:10]+' → '+endDate)
+    #else:
+    #    endDate = clData['ENDDATE'][0:10].replace('-','')
     startTime = clData['STARTDATE'][11:19].replace(':','')
     EVENT['recurrence'] = [ ]
     ## 繰り返しデータのチェック
     if checkExData(clData) == True:
         EVENT['recurrence'].append("EXDATE;TZID=%s:" % GMT_PLACE +getHolidayData(startTime))
-        EVENT['recurrence'].append("RDATE;TZID=%s:" % GMT_PLACE + startDate + 'T' + startTime)
+        if clData['SCD_DAILY'] == STR_ONE:
+            endDate = str(datetime.datetime.strptime(clData['ENDDATE'][0:10],"%Y-%m-%d") + datetime.timedelta(days=1))[0:10].replace('-','')
+            logging.debug('changeAllDate'+clData['ENDDATE'][0:10]+' → '+endDate)
+        EVENT['recurrence'].append("RDATE;TZID=%s:" % GMT_PLACE)
+        #EVENT['recurrence'].append("RDATE;TZID=%s:" % GMT_PLACE + endDate + 'T' + startTime)
         EVENT['recurrence'].append("RRULE:")
         #毎日
         if clData['SCE_DAILY'] == STR_ONE and clData['BYDAY_SU'] == STR_ZERO and clData['BYDAY_MO'] == STR_ZERO \
@@ -499,6 +510,8 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
         batch = service.new_batch_http_request(callback=insert_calendar)
     logging.debug('-----batchpara-------')
     logging.debug(calendarId)
+    if EVENT['recurrence'] != [ ] and EVENT['recurrence'][1] == "RDATE;TZID=%s:" % GMT_PLACE:
+        EVENT['recurrence'][1] = ""
     if batchcount < 50 and lastFlg != 'change':
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
@@ -539,15 +552,17 @@ def insert_calendar(request_id, response, exception):
     global writeObj
     global okcnt
     global ngcnt
+    global execMember
     if exception is None:
         logging.debug('callback----OK-------')
         logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
         writeObj.writerow(response)
         okcnt = okcnt + 1
-        organizer = ast.literal_eval(response['organizer'])
-        if organizer['email'] in execMember
+        #organizer = ast.literal_eval(response['organizer'])
+        organizer = response['organizer']
+        if organizer['email'] in execMember:
             execMember[organizer['email']]['cnt'] = execMember[organizer['email']]['cnt'] + 1
-        else
+        else:
             execMember[organizer['email']] = {'cnt': 0}
         pass
     else:
@@ -591,6 +606,7 @@ def main():
     :return: なし
     """
     global priEmail
+    global execMember
     #try:
     #import argparse
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
@@ -665,8 +681,22 @@ def main():
                     resAddress = getResourceAddress(clData)
                     if {'email': resAddress,'responseStatus':'accepted'} not in EVENT['attendees'] and resAddress is not None:
                         EVENT['attendees'].append({'email': resAddress, 'responseStatus': 'accepted'})
-
-                    EVENT['recurrence'][1] = EVENT['recurrence'][1] + ',' + clData['STARTDATE'][0:10].replace('-','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
+                    # 全日
+                    if clData['SCD_DAILY'] == STR_ONE:
+                        # 同じ日があったら含めない
+                        if 'dateTime' in EVENT['start'] and \
+                        EVENT['start']['dateTime'][0:10] != clData['STARTDATE'][0:10]\
+                        or 'date' in EVENT['start'] and \
+                        EVENT['start']['date'][0:10] != clData['STARTDATE'][0:10]:
+                            if EVENT['recurrence'][1] != "RDATE;TZID=%s:" % GMT_PLACE:
+                                EVENT['recurrence'][1] = EVENT['recurrence'][1] + ','
+                            startDate = str(datetime.datetime.strptime(clData['STARTDATE'][0:10],"%Y-%m-%d") + datetime.timedelta(days=0))[0:10].replace('-','')
+                            EVENT['recurrence'][1] = EVENT['recurrence'][1] + startDate
+                            logging.debug('changeAllDate'+clData['STARTDATE'][0:10]+' → '+startDate)
+                    else:
+                        if EVENT['recurrence'][1] != "RDATE;TZID=%s:" % GMT_PLACE:
+                            EVENT['recurrence'][1] = EVENT['recurrence'][1] + ','
+                        EVENT['recurrence'][1] = EVENT['recurrence'][1] + clData['STARTDATE'][0:10].replace('-','') + 'T' + clData['STARTDATE'][11:19].replace(':','')
                     #enddate = clData['ENDDATE'][0:10].replace('-','')
                     #if int(EVENT['enddate']) < int(enddate):
                     #    EVENT['enddate'] = enddate
@@ -752,8 +782,8 @@ def main():
     logging.info('OK CNT:' + str(_okcnt))
     logging.info('NG CNT:' + str(_ngcnt))
     logging.info('---exec member count----')
-    for key, value in execMember:
-        logging.info(key+':'str(value))
+    for key, value in execMember.items():
+        logging.info(key+':'+str(value))
 
 if __name__ == '__main__':
 

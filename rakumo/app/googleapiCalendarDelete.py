@@ -38,7 +38,11 @@ ngcnt = 0
 
 CALENDARCSVS = [
 ##'calendarList_20180309172637.csv',
-'calendarList_20180315162536_api_delete.csv'
+#'calendarList_20180322101630_api_delete.csv',
+#'calendarList_20180322105509.csv',
+#'calendarList_20180322151027.csv',
+#'calendarList_20180322151127.csv',
+'calendarList_20180322151251_api_delete.csv',
 ]
 @jit
 def getCalendarData(calendacsv):
@@ -54,12 +58,13 @@ def getCalendarData(calendacsv):
         if data['status'] != 'cancelled':
             organizer = ast.literal_eval(data['organizer'])
             if 'email' in organizer:
-                eventidList.append({'id':data['id'],'organizer':organizer['email']})
-            if data['attendees'] != '':
-                attendees = ast.literal_eval(data['attendees'])
-                for attendee in attendees:
-                    if attendee['responseStatus'] == 'accepted' and organizer['email'] != attendee['email']:
-                        eventidList.append({'id':data['id'],'organizer':attendee['email']})
+                if {'id':data['id'],'organizer':organizer['email']} not in eventidList:
+                    eventidList.append({'id':data['id'],'organizer':organizer['email']})
+            #if data['attendees'] != '':
+            #    attendees = ast.literal_eval(data['attendees'])
+            #    for attendee in attendees:
+            #        if attendee['responseStatus'] == 'accepted' and organizer['email'] != attendee['email']:
+            #            eventidList.append({'id':data['id'],'organizer':attendee['email']})
 
 
     return eventidList
