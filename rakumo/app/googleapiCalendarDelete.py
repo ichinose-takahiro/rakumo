@@ -42,7 +42,16 @@ CALENDARCSVS = [
 #'calendarList_20180322105509.csv',
 #'calendarList_20180322151027.csv',
 #'calendarList_20180322151127.csv',
-'calendarList_20180322151251_api_delete.csv',
+#'calendarList_20180322151251_api_delete.csv',
+#'calendarList_20180322155356.csv',
+#'calendarList_20180322160702.csv',
+#'calendarList_20180322161519.csv',
+#'calendarList_20180322161809.csv',
+#'calendarList_20180322163522.csv',
+#'calendarList_20180322163754.csv',
+#'calendarList_20180322164107.csv',
+#'calendarList_20180322165111.csv',
+'calendarList_20180326091656_api_delete.csv'
 ]
 @jit
 def getCalendarData(calendacsv):

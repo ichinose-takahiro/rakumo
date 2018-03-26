@@ -9,9 +9,12 @@ import pandas as pd
 
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
-CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
-CSVFILE = WORKDIR + '180206_GroupSession_edit_change_20180313_r.csv'
-
+#CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
+#CALENDARCSV = WORKDIR + '180314_GroupSession_change.csv'
+CALENDARCSV = WORKDIR + '180314_GroupSession_change_wpd.csv'
+#CSVFILE = WORKDIR + '180206_GroupSession_edit_change_20180313_r.csv'
+#CSVFILE = WORKDIR + '180314_GroupSession_change_r.csv'
+CSVFILE = WORKDIR + '180314_GroupSession_change_wpd_r.csv'
 logging = init('testlist')
 
 def getcalendarData():
