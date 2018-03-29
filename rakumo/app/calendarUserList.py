@@ -74,7 +74,8 @@ def getUserData(service, dictkey, csvf, w, pagetoken):
 
         # 各行書き込み
         for user in users:
-            w.writerow({'primaryEmail':user['primaryEmail'],'fullName':user['name']['fullName'], 'sei':user['name']['familyName'],'mei':user['name']['givenName']})
+            logging.debug(user['name']['fullName'])
+            w.writerow({'primaryEmail':user['primaryEmail'],'fullName':user['name']['fullName'].strip(u'\u200b'), 'sei':user['name']['familyName'].strip(u'\u200b'),'mei':user['name']['givenName'].strip(u'\u200b')})
 
     return pagetoken
 

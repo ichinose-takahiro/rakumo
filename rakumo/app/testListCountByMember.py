@@ -14,6 +14,7 @@ USERCSV = WORKDIR + 'user.csv'
 USEREXCSV = WORKDIR + 'userUnique.csv'
 pricnt = 0
 memcnt = 0
+execMember = {}
 
 USERADDRESS = [
     'tobaru-hideyasu@919.jp','nishiyama-kohei@919.jp','inomata-toshiyuki@919.jp','takubo-hidenori@919.jp','koike-akihiro@919.jp',
@@ -105,12 +106,13 @@ def getMemberAddress(data, memdata = None):
     logging.debug(data)
     memberName = data['SEI'] + data['MEI']
     priName = data['PRISEI']+data['PRIMEI']
-    ret = {'name': memberName, 'priName': priName, 'retFlg': False}
+    ret = {'name': memberName, 'priName': priName, 'retFlg': False, 'None':False}
     logging.debug(ret)
     ret = checkExName(ret)
     logging.debug(ret)
     for memberData in getmemberData():
         memberData = json.loads(memberData,encoding='UTF-8')
+        #logging.debug(memberData['fullName'].encode('utf-8').strip().decode())
         if memberData['fullName'] == ret['name']:
             ret['email'] = memberData['primaryEmail']
             flg1 = True
@@ -120,7 +122,8 @@ def getMemberAddress(data, memdata = None):
         if flg1 == True and flg2 == True:
             break
     if flg1 == False or flg2 == False:
-        ret = None
+        ret['None']=True
+        logging.debug('errdataname[user]:'+memberData['fullName']+',[retdata]:'+ret['name']+',[retpridata]:'+ret['priName'])
         #logging.debug('flg1:'+str(flg1))
         #logging.debug('flg2:'+str(flg2))
         #if flg1 == True:
@@ -154,28 +157,30 @@ def getProcess():
     clList = getcalendarData()
     logging.debug('------------start----------')
     # 列の設定
-    dictkey=['SCD_SID','SCD_RSSID','SCE_SID','SCD_GRP_SID','SUMMARY','DESCRIPTION','BIKO','COLORID','RESOURCE','SCD_DAILY','STARTDATE','ENDDATE','SEI','MEI','PRISEI','PRIMEI','PUBLICFLG','EDITFLG','BYDAY_SU','BYDAY_MO','BYDAY_TU','BYDAY_WE','BYDAY_TH','BYDAY_FR','BYDAY_SA','SCE_DAY','SCE_WEEK','SCE_DAILY','SCE_MONTH_YEARLY','SCE_DAY_YEARLY']
+    #dictkey=['SCD_SID','SCD_RSSID','SCE_SID','SCD_GRP_SID','SUMMARY','DESCRIPTION','BIKO','COLORID','RESOURCE','SCD_DAILY','STARTDATE','ENDDATE','SEI','MEI','PRISEI','PRIMEI','PUBLICFLG','EDITFLG','BYDAY_SU','BYDAY_MO','BYDAY_TU','BYDAY_WE','BYDAY_TH','BYDAY_FR','BYDAY_SA','SCE_DAY','SCE_WEEK','SCE_DAILY','SCE_MONTH_YEARLY','SCE_DAY_YEARLY']
+    dictkey=['key', 'count']
     csvf = open(CSVFILE, 'w')
     w = csv.DictWriter(csvf, dictkey) # キーの取得
     w.writeheader() # ヘッダー書き込み
-
+    lstcnt = 1
     for clData in clList:
         logging.debug(str(pricnt)+':'+str(memcnt))
         clData = json.loads(clData,encoding='utf-8')
         writeData = clData
         memData = getMemberAddress(clData)
-        if memData is None:
+        if memData['None'] == True:
             logging.warn('not name:::::SCD_SID:'+ writeData['SCD_SID'])
+            execMember['error'+str(lstcnt)] = {'name': memData['name'], 'priName':memData['priName'],'cnt': 'None'}
             continue
-        logging.debug(memData)
         if memData['email'] in execMember:
             execMember[memData['email']]['cnt'] = execMember[memData['email']]['cnt'] + 1
+            logging.debug(memData['email']+':'+str(execMember[memData['email']]['cnt']))
         else:
-            execMember[memData['email']] = {'cnt': 0}
-
+            execMember[memData['email']] = {'name': memData['name'],'cnt': 1}
+        lstcnt = lstcnt + 1 
 
     for key, value in execMember.items():
-        w.writerow(key+':'+str(value))
+        w.writerow({'key':key,'count':str(value)})
 
     csvf.close()
 
