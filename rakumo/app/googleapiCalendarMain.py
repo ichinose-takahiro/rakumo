@@ -43,7 +43,8 @@ WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 USERCSV = WORKDIR + 'user.csv'
 USEREXCSV = WORKDIR + 'userUnique.csv'
 USERNOCSV = WORKDIR + 'userNotMigration.csv'
-RESOURCE = WORKDIR + 'resource_test_20180206.csv'
+#RESOURCE = WORKDIR + 'resource_test_20180206.csv'
+RESOURCE = WORKDIR + 'resource_20180418.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
 #CALENDARCSV = WORKDIR + '180308_GroupSession_test.csv'
@@ -234,7 +235,7 @@ def getResourceAddress(data):
     ret = None
     for resourceData in getResource():
         resourceData = json.loads(resourceData,encoding='UTF-8')
-        if resourceData['generatedResourceName'] == '[テスト中]'+data['RESOURCE']:
+        if resourceData['resourceName'] == data['RESOURCE']:
             ret = resourceData['resourceEmail']
             break
     return ret
@@ -511,9 +512,10 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
         batch = service.new_batch_http_request(callback=insert_calendar)
     logging.debug('-----batchpara-------')
     logging.debug(calendarId)
-    if EVENT['recurrence'] != [ ] and EVENT['recurrence'][1] == "RDATE;TZID=%s:" % GMT_PLACE:
-        EVENT['recurrence'][1] = ""
-    if batchcount < 50 and lastFlg != 'change':
+    #if batchcount < 50 and lastFlg != 'change':
+    if batchcount < 50:
+        if EVENT['recurrence'] != [ ] and EVENT['recurrence'][1] == "RDATE;TZID=%s:" % GMT_PLACE:
+            EVENT['recurrence'][1] = ""
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
@@ -723,21 +725,27 @@ def main():
 #                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], credentials)
 #SERVICEACCOUNT
                     # 入れ替えのタイミングなので、先に実行してから次にいく。
-                    if priEmail == '':
-                        priEmail = memData['pri_email']
+                    #if priEmail == '':
+                    #    logging.debug('--akande--')
+                    #    priEmail = memData['pri_email']
                     if priEmail != memData['pri_email']:
+                        logging.debug('---change---')
+                        logging.debug(priEmail)
+                        logging.debug(memData['pri_email'])
                         _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()), 'change')
                         priEmail = memData['pri_email']
-
-                    #_okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()))
-                    _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
+                    else:
+                        _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()))
+                        #_okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()))
                     recr_cnt = 0
                     logging.debug('------------------------------')
                     EVENT, memData['pri_email'] = createEvent(clData, memData)
             else:
                 #初回データの取得
                 recr_cnt = 0
+                logging.debug('---start----')
                 EVENT, memData['pri_email'] = createEvent(clData, memData)
+                priEmail = memData['pri_email']
         else:
             if memData is not None:
                 # 移行対象ではないユーザ
@@ -767,8 +775,8 @@ def main():
     logging.debug('------------end----------------')
     if memData is not None:
         # 最後の一つ前と最後のメンバーが違う場合は先に実行する。
-        if priEmail != memData['pri_email']:
-            _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()), 'change')
+        #if priEmail != memData['pri_email']:
+        #    _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()), 'change')
         _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
     #ref = CAL.events().insert(calendarId=memData['pri_email'], conferenceDataVersion=1,sendNotifications=False, body=EVENT).execute()
     #ref = CAL.events().insert(calendarId='ichinose-takahiro@919.jp', conferenceDataVersion=1, sendNotifications=False, body=EVENT).execute()

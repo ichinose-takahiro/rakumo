@@ -55,7 +55,11 @@ CALENDARCSVS = [
 #'calendarList_20180328122325.csv'
 #'calendarList_20180403094602.csv',
 #'calendarList_20180403094626.csv',
-'calendarList_20180416182308.csv',
+#'calendarList_20180416182308.csv',
+#'calendarList_20180418090355.csv',
+#'calendarList_20180418165307.csv',
+#'calendarList_20180418171929.csv',
+'calendarList_20180418195528.csv',
 ]
 @jit
 def getCalendarData(calendacsv):

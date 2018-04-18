@@ -54,7 +54,8 @@ def getResourceData(service):
                      "resourceName":upDataData['resourceName'],
                      "generatedResourceName": upDataData['generatedResourceName'],
                      "resourceType":upDataData['resourceType'],
-                     "resourceDescription":upDataData['resourceDescription']}
+                     "resourceDescription":upDataData['resourceDescription'],
+                     "resourceCategory":upDataData['resourceCategory']}
         else:
             EVENT = {
                      "resourceId":upDataData['resourceId'],
