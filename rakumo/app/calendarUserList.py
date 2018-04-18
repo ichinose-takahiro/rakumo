@@ -8,6 +8,7 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 from .loginglibrary import init
+#from loginglibrary import init
 import csv
 import codecs
 
@@ -115,5 +116,5 @@ def getProcess():
     csvf.close()
     logging.debug('csv_writer_End')
 
-#if __name__ == '__main__':
-#    main()
+if __name__ == '__main__':
+    Process()

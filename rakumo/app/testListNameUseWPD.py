@@ -8,23 +8,26 @@ import json
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession.csv'
-CALENDARCSV = WORKDIR + '180314_GroupSession.csv'
-CSVFILE = WORKDIR + '180314_GroupSession_change_wpd.csv'
+#CALENDARCSV = WORKDIR + '180314_GroupSession.csv'
+CALENDARCSV = WORKDIR + 'GroupSession_20180413.csv'
+#CSVFILE = WORKDIR + '180314_GroupSession_change_wpd.csv'
+CSVFILE = WORKDIR + '180416_GroupSession_change_ssp_2.csv'
 USERCSV = WORKDIR + 'user.csv'
 USEREXCSV = WORKDIR + 'userUnique.csv'
 pricnt = 0
 memcnt = 0
 
-USERADDRESS = [
-    'tobaru-hideyasu@919.jp','nishiyama-kohei@919.jp','inomata-toshiyuki@919.jp','takubo-hidenori@919.jp','koike-akihiro@919.jp',
-    'morimoto-hikaru@919.jp','sato-manami@919.jp','kan-sayuri@919.jp','mikami-takashi@919.jp','hama-yasuki@919.jp',
-    'hirata-naomi@919.jp','shiga-sakurako@919.jp','komagata-yukino@919.jp','kitabatake-yoshimi@919.jp','kaneda-yoko@919.jp',
-    'kimura-satoko@919.jp','noma-chinami@919.jp','kasai-kazuaki@919.jp','suzuki-yugo@919.jp','isomoto-miho@919.jp',
-    'nihonmatsu-yumeko@919.jp','saito-takamitsu@919.jp','iwasaki-sanae@919.jp','matsushita-atsushi@919.jp','matsumura-shun@919.jp',
-    'matsubara-kosuke@919.jp','miyamoto-tomomi@919.jp','horino-shunya@919.jp','hogan-nobutaka@919.jp','ishida-yuko@919.jp',
-    'yamaoka-yuina@919.jp','sato-sora@919.jp','ogawa-yoshiteru@919.jp','yoshida-hiroshi@919.jp','karasu-mikiko@919.jp',
-    'yamada-ryohei@919.jp','sakamoto-ayako@919.jp','nomura-miku@919.jp','nakahira-shinya@919.jp'
-]
+USERADDRESS = ['ssp-tky-c@919.jp', 'sato-motoi@919.jp', 'takayama-tetsuhiro@919.jp', 'ichinose-takahiro@919.jp']
+#USERADDRESS = [
+#    'tobaru-hideyasu@919.jp','nishiyama-kohei@919.jp','inomata-toshiyuki@919.jp','takubo-hidenori@919.jp','koike-akihiro@919.jp',
+#    'morimoto-hikaru@919.jp','sato-manami@919.jp','kan-sayuri@919.jp','mikami-takashi@919.jp','hama-yasuki@919.jp',
+#    'hirata-naomi@919.jp','shiga-sakurako@919.jp','komagata-yukino@919.jp','kitabatake-yoshimi@919.jp','kaneda-yoko@919.jp',
+#    'kimura-satoko@919.jp','noma-chinami@919.jp','kasai-kazuaki@919.jp','suzuki-yugo@919.jp','isomoto-miho@919.jp',
+#    'nihonmatsu-yumeko@919.jp','saito-takamitsu@919.jp','iwasaki-sanae@919.jp','matsushita-atsushi@919.jp','matsumura-shun@919.jp',
+#    'matsubara-kosuke@919.jp','miyamoto-tomomi@919.jp','horino-shunya@919.jp','hogan-nobutaka@919.jp','ishida-yuko@919.jp',
+#    'yamaoka-yuina@919.jp','sato-sora@919.jp','ogawa-yoshiteru@919.jp','yoshida-hiroshi@919.jp','karasu-mikiko@919.jp',
+#    'yamada-ryohei@919.jp','sakamoto-ayako@919.jp','nomura-miku@919.jp','nakahira-shinya@919.jp'
+#]
 
 logging = init('testlist')
 
@@ -120,15 +123,15 @@ def getMemberAddress(data, memdata = None):
         if flg1 == True and flg2 == True:
             break
     if flg1 == False or flg2 == False:
-        ret = None
+        ##ret = None
         #logging.debug('flg1:'+str(flg1))
         #logging.debug('flg2:'+str(flg2))
-        #if flg1 == True:
-        #   ret['pri_email'] = ret['email']
+        if flg1 == True:
+           ret['pri_email'] = ret['email']
         #elif flg2 == True:
         #   ret['email'] = ret['pri_email']
-        #else:
-        #   ret = None
+        else:
+           ret = None
     #logging.debug(memberName)
     #logging.debug(priName)
     logging.debug(ret)

@@ -119,7 +119,7 @@ def getUserData(service, w, pagetoken, http):
                     w.writerow(rowMember)
             else:
                 loging.debug(group['name'])
-                loging.debug(member)
+                #loging.debug(member)
                 rowMember = {
                     'groupId': group['id'],
                     'groupEmail': group['email'],

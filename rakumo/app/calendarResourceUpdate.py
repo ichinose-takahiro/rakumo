@@ -12,10 +12,14 @@ import json
 
 logging = init('resourceUpdate')
 
-WORKDIR = '/var/www/html/googleapi'
+#WORKDIR = '/var/www/html/googleapi'
 #RESOURCE = WORKDIR + '/data/updateResource_1221.csv'
+WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
+CALENDARCSV = WORKDIR + 'resourceList_add_20180416.csv'
 RESOURCE = ''
-EVENTKEY = {'resourceId','resourceName','generatedResourceName','resourceType'}
+EVENTKEY = {'resourceId', 'resourceName', 'generatedResourceName', 'resourceType', 'capacity', 'resourceCategory',  'resourceDescription','buildingId','floorName'}
+DICTKEY = ['resourceId', 'resourceName', 'result']
+CSVFILE = '/var/www/html/mysite/rakumo/static/files/resource.csv'
 
 "会議室データを取得"
 def getResource():
@@ -34,18 +38,51 @@ def getResourceData(service):
     upDateList = getResource()
     doCheck(upDateList, EVENTKEY)
 
+    csvf = open(CSVFILE, 'w')
+
+    # 列の設定
+    dictkey=DICTKEY
+    w = csv.DictWriter(csvf, dictkey) # キーの取得
+    w.writeheader() # ヘッダー書き込み
+
     for upDataData in upDateList:
         upDataData = json.loads(upDataData,encoding='UTF-8')
-        EVENT = {"resourceId":upDataData['resourceId'],
-                 "resourceName":upDataData['resourceName'],
-                 "generatedResourceName": upDataData['generatedResourceName'],
-                 "resourceType":upDataData['resourceType']}
+        EVENT = {}
+        if(upDataData['resourceCategory']!= 'CONFERENCE_ROOM'):
+            EVENT = {
+                     "resourceId":upDataData['resourceId'],
+                     "resourceName":upDataData['resourceName'],
+                     "generatedResourceName": upDataData['generatedResourceName'],
+                     "resourceType":upDataData['resourceType'],
+                     "resourceDescription":upDataData['resourceDescription']}
+        else:
+            EVENT = {
+                     "resourceId":upDataData['resourceId'],
+                     "resourceName":upDataData['resourceName'],
+                     "generatedResourceName": upDataData['generatedResourceName'],
+                     "resourceType":upDataData['resourceType'],
+                     "capacity":int(upDataData['capacity']),
+                     "resourceCategory":upDataData['resourceCategory'],
+                     "buildingId":upDataData['buildingId'],
+                     "floorName":upDataData['floorName'],
+                     "resourceDescription":upDataData['resourceDescription']}
 #        EVENT['resourceId'] = upDataData['resourceId']
 #        EVENT['resourceName'] = upDataData['resourceName']
 #        EVENT['generatedResourceName'] = upDataData['generatedResourceName']
-        resourcedatas = service.resources().calendars().update(customer='my_customer', calendarResourceId='appsadmin@919.jp', body=EVENT).execute()
-        logging.info(resourcedatas)
-        logging.info(upDataData['resourceId'] + ':update!')
+        try:
+            resourcedatas = service.resources().calendars().update(customer='my_customer', calendarResourceId='appsadmin@919.jp', body=EVENT).execute()
+            logging.info(resourcedatas)
+            logging.info(upDataData['resourceId'] + ':update!')
+            w.writerow({'resourceId': upDataData['resourceId'],
+                        'resourceName':upDataData['resourceName'],
+                        'result': 'OK'})
+
+        except Exception as e:
+            logging.debug('Failed to post request to [{}] due to: {}'.format(EVENT, e))
+            w.writerow({'resourceId': upDataData['resourceId'],
+                        'resourceName':upDataData['resourceName'],
+                        'result': 'NG'})
+
 
 def Process(name):
     global RESOURCE
@@ -107,4 +144,4 @@ def getProcess():
     getResourceData(app_admin_service)
 
 if __name__ == '__main__':
-    Process()
+    Process(CALENDARCSV)

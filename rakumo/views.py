@@ -143,7 +143,11 @@ def form(request):
             path = upload(request)
             ruProcess(path)
             logging.debug('postType resource output end')
-            response = redirect('rakumo:complete')
+            #response = redirect('rakumo:complete')
+            response = HttpResponse(open(DOWNLOAD_DIR + 'resource.csv', 'rb').read(),content_type="text/csv")
+            response["Content-Disposition"] = "filename=googleResourceList_update" + today + ".csv"
+            logging.debug('postType groupmember output end')
+
         except forms.ValidationError as e:
             logging.error(e.args[0])
             response = render(request, rform, {'error_message': e.args[0]})
@@ -160,13 +164,20 @@ def form(request):
                 logging = setId(userId, username, logging, 'groupmemAdd')
                 logging.info('postType groupmem add start')
                 gmaProcess(path)
+                gmpath = '_add'
                 logging.info('postType groupmem add end')
             else:
                 logging = setId(userId, username, logging, 'groupmemDel')
                 logging.info('postType groupmem del start')
                 gmdProcess(path)
+                gmpath = '_del'
                 logging.info('postType groupmem del end')
-            response = redirect('rakumo:complete')
+            #response = redirect('rakumo:complete')
+
+            response = HttpResponse(open(DOWNLOAD_DIR + 'groupMember.csv', 'rb').read(),content_type="text/csv")
+            response["Content-Disposition"] = "filename=googleGroupMemberList_" + gmpath + today + ".csv"
+            logging.debug('postType groupmember output end')
+
         except forms.ValidationError as e:
             logging.error(e.args[0])
             response = render(request, rform, {'error_message': e.args[0]})

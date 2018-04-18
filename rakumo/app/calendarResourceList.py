@@ -14,7 +14,7 @@ APPLICATION_NAME = 'Directory API Python Quickstart'
 CSVFILE = '/var/www/html/mysite/rakumo/static/files/resource.csv'
 DICTKEY = ['kind', 'etags', 'resourceId', 'resourceName', 'generatedResourceName',
              'resourceType', 'resourceDescription', 'resourceEmail', 'resourceCategory',
-             'userVisibleDescription','capacity']
+             'userVisibleDescription','capacity','buildingId','floorName']
 
 logging = init('resource')
 

@@ -1,2 +1,2 @@
-resourceId,resourceName,generatedResourceName,resourceType
-95210516777,テスト-テスト１２,テスト-テスト１２,テスト用
+resourceId,resourceName,generatedResourceName,resourceType,capacity,resourceCategory,resourceDescription,buildingId,floorName
+95210516777,テスト-テスト１２,テスト-テスト１２,テスト用,0,OTHER,テスト詳細

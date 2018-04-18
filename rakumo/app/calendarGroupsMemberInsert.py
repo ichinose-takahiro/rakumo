@@ -32,7 +32,9 @@ APPLICATION_NAME = 'Directory API Python Quickstart'
 #WORKDIR = '/var/www/html/googleapi'
 #GROUPLIST = WORKDIR + '/data/groupsMemberInsrtList_0117.csv'
 RESOURCE = ''
+DICTKEY = ['groupKey','memberKey', 'result']
 EVENTKEY = {'groupKey','memberKey'}
+CSVFILE = '/var/www/html/mysite/rakumo/static/files/groupMember.csv'
 
 
 def getGroups():
@@ -83,12 +85,12 @@ def get_credentials():
         logging.debug('Storing credentials to ' + credential_path)
     return credentials
 
-def get_group_members(group, http):
+def get_group_members(group, http, w):
     url = 'https://www.googleapis.com/admin/directory/v1/groups/{}/members'.format(group['groupKey'])
     payload = {'email':group['memberKey'],'role':'MEMBER'}
-    return call_google_api("POST", url, payload, http)
+    return call_google_api("POST", url, payload, http, w, group['groupKey'])
 
-def call_google_api(method, url,payload,http):
+def call_google_api(method, url, payload, http, w, groupKey):
     content = {}
     try:
         (resp, content) = http.request(uri=url, method=method, body=json.dumps(payload),
@@ -99,18 +101,32 @@ def call_google_api(method, url,payload,http):
         logging.debug('Failed to post request to [{}] due to: {}').format(url, e)
     if resp['status'] == '200':
         logging.debug(payload['email']+':insert!')
+        # 各行書き込み
+        w.writerow({'groupKey': groupKey,
+                    'memberKey': payload['email'],
+                    'result': 'OK'})
     else:
         logging.debug(payload['email']+':NG!')
+        w.writerow({'groupKey': groupKey,
+                    'memberKey': payload['email'],
+                    'result': 'NG'})
 
 def insertData(service, http):
 
     groupList = getGroups()
     doCheck(groupList, EVENTKEY)
 
+    csvf = open(CSVFILE, 'w')
+
+    # 列の設定
+    dictkey=DICTKEY
+    w = csv.DictWriter(csvf, dictkey) # キーの取得
+    w.writeheader() # ヘッダー書き込み
+
     for group in groupList:
 
         group = json.loads(group, encoding='UTF-8')
-        get_group_members(group, http)
+        get_group_members(group, http, w)
 
 def Process(name):
     global RESOURCE

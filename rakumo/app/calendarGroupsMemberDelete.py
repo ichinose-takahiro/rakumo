@@ -32,7 +32,9 @@ APPLICATION_NAME = 'Directory API Python Quickstart'
 #WORKDIR = '/var/www/html/googleapi'
 #GROUPLIST = WORKDIR + '/data/groupsMemberInsrtList_0117.csv'
 RESOURCE = ''
+DICTKEY = ['groupKey','memberKey', 'result']
 EVENTKEY = {'groupKey','memberKey'}
+CSVFILE = '/var/www/html/mysite/rakumo/static/files/groupMember.csv'
 
 
 def getGroups():
@@ -83,12 +85,12 @@ def get_credentials():
         logging.debug('Storing credentials to ' + credential_path)
     return credentials
 
-def del_group_members(group, http):
+def del_group_members(group, http, w):
     url = 'https://www.googleapis.com/admin/directory/v1/groups/{}/members/{}'.format(group['groupKey'],group['memberKey'])
     payload = {'group':group['groupKey'],'member':group['memberKey']}
-    return call_google_api("DELETE", url,payload, http)
+    return call_google_api("DELETE", url,payload, http, w)
 
-def call_google_api(method, url, payload, http):
+def call_google_api(method, url, payload, http, w):
     content = {}
     try:
         (resp, content) = http.request(uri=url, method=method,
@@ -98,19 +100,32 @@ def call_google_api(method, url, payload, http):
     except Exception as e:
         logging.debug('Failed to post request to [{}] due to: {}').format(url, e)
     if resp['status'] == '200':
-        logging.debug(payload['group']+':'+ payload['group'] + ':insert!')
+        logging.debug(payload['group']+':'+ payload['member'] + ':delete!')
+        # 各行書き込み
+        w.writerow({'groupKey': payload['group'],
+                    'memberKey': payload['member'],
+                    'result': 'OK'})
     else:
-        logging.debug(payload['group']+':'+ payload['group'] + ':NG!')
+        logging.debug(payload['group']+':'+ payload['member'] + ':NG!')
+        w.writerow({'groupKey': payload['group'],
+                    'memberKey': payload['member'],
+                    'result': 'NG'})
 
 def deleteData(service, http):
 
     groupList = getGroups()
     doCheck(groupList, EVENTKEY)
 
+    csvf = open(CSVFILE, 'w')
+    # 列の設定
+    dictkey=DICTKEY
+    w = csv.DictWriter(csvf, dictkey) # キーの取得
+    w.writeheader() # ヘッダー書き込み
+
     for group in groupList:
 
         group = json.loads(group, encoding='UTF-8')
-        tresult = del_group_members(group, http)
+        tresult = del_group_members(group, http, w)
         logging.info(tresult)
 
 def Process(name):
