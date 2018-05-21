@@ -12,6 +12,7 @@ from rakumo.app.calendarGroupsMemberDelete import Process as gmdProcess
 from rakumo.app.calendarAclList import Process as aclProcess
 from rakumo.app.calendarAclAdd import Process as aclaProcess
 from rakumo.app.calendarAclDelete import Process as acldProcess
+from rakumo.app.calendarDataAdd import Process as calendaraProcess
 from django import forms
 from django.http import HttpResponse
 from django.template import loader
@@ -38,6 +39,7 @@ DOWNLOAD_DIR = os.path.dirname(os.path.abspath(__file__)) + '/static/files/'
 #    settings.GOOGLE_OAUTH2_CLIENT_SECRETS_JSON,
 #    scope=['https://www.googleapis.com/auth/plus.me','https://www.googleapis.com/auth/admin.directory.user'],
 #    redirect_uri='http://localhost:8000/oauth2callback')
+BP_LIST = ['shoukai-jisui@919.jp']
 
 @login_required
 def index(request):
@@ -70,10 +72,14 @@ def auth_return(request):
   if request.GET.get('code') is None:
       return redirect('rakumo:form')
   credential = FLOW.step2_exchange(request.GET.get('code').encode('utf-8'))
- 
+
+  logging.debug(request.user) 
   storage = DjangoORMStorage(CredentialsModel, 'id', request.user, 'credential')
   storage.put(credential)
-  return HttpResponseRedirect("/rakumo/form")
+  if request.user in BP_LIST:
+      return HttpResponseRedirect("/rakumo/bp")
+  else:
+      return HttpResponseRedirect("/rakumo/form")     
 
 @login_required
 def form(request):
@@ -91,7 +97,7 @@ def form(request):
     username = str(vars(request.user)['_wrapped'])
     logging = setId(userId,username,logging,'view1.py')
     logging.info('form_request')
-
+    logging.debug(request.user)
     if request.method != 'POST':
         return render(request, 'rakumo/form.html')
 
@@ -252,3 +258,49 @@ def upload(request):
 @login_required
 def readme(request):
     return render(request, 'rakumo/readme.html')
+
+@login_required
+def bp(request):
+    logging = None
+    userId = ''
+    username = str(vars(request.user)['_wrapped'])
+    logging = setId(userId,username,logging,'view1.py')
+    logging.info('form_request_bp')
+
+    if request.method != 'POST':
+        return render(request, 'rakumo/bp.html')
+
+    today = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
+
+    response = None
+    rform = 'rakumo/bp.html'
+    postType = request.POST["postType"]
+
+    print('process_start')
+    if postType == 'calendarAdd': # カレンダー追加処理
+        try:
+            logging = setId(userId,username,logging,'acl')
+            path = upload(request)
+            logging.debug('postType calendarAdd start')
+            csvName = calendaraProcess(path)
+            logging.debug(csvName)
+            addpath = 'add_'
+
+            response = HttpResponse(open(csvName, 'rb').read(),
+                                    content_type="text/csv")
+            response["Content-Disposition"] = "filename=googleAclList_" + addpath + today + ".csv"
+            logging.debug('postType acl output end')
+        except forms.ValidationError as e:
+            logging.error(e)
+            response = render(request, rform, {'error_message': e.args[0]})
+        except KeyError as e:
+            logging.error(e)
+            response =  render(request, rform, {'error_message': 'ファイルがアップロードされてい>ないか、内容に問題があります。'})
+        except csv.Error as e:
+            logging.error(e)
+            response = render(request, rform, {'error_message': 'ファイルに問題があります。'})
+
+    return response
+
+
+    return response

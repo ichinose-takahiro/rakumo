@@ -16,6 +16,7 @@ app_name = 'rakumo'
 urlpatterns = [
     #url('', views.index, name='index'),
     url('form/', views.form, name='form'),
+    url('bp/', views.bp, name='bp'),
     #url('complete/', views.complete, name='complete'),
     url(r'^$', views.index, name='index'),
 
