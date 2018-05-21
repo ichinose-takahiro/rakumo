@@ -44,14 +44,24 @@ USERCSV = WORKDIR + 'user.csv'
 USEREXCSV = WORKDIR + 'userUnique.csv'
 USERNOCSV = WORKDIR + 'userNotMigration.csv'
 #RESOURCE = WORKDIR + 'resource_test_20180206.csv'
-RESOURCE = WORKDIR + 'resource_20180418.csv'
+#RESOURCE = WORKDIR + 'resource_20180418.csv'
+RESOURCE = WORKDIR + 'resource_20180511.csv'
 HOLIDAY = WORKDIR + 'holiday.csv'
-#CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
-#CALENDARCSV = WORKDIR + '180308_GroupSession_test.csv'
-#CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
-#CALENDARCSV = WORKDIR + '180314_GroupSession_change_r_test.csv'
-#CALENDARCSV = WORKDIR + '180314_GroupSession_change_wpd_r.csv'
-CALENDARCSV = WORKDIR + '180416_GroupSession_change_ssp_2.csv'
+##CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
+##CALENDARCSV = WORKDIR + '180308_GroupSession_test.csv'
+##CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
+##CALENDARCSV = WORKDIR + '180314_GroupSession_change_r_test.csv'
+##CALENDARCSV = WORKDIR + '180314_GroupSession_change_wpd_r.csv'
+##CALENDARCSV = WORKDIR + '180416_GroupSession_change_ssp_2_sort.csv'
+##CALENDARCSV = WORKDIR + '180426_GroupSession_change_ssp_3_sort.csv'
+##CALENDARCSV = WORKDIR + '180512_GroupSession_change_sort.csv'
+##CALENDARCSV = WORKDIR + 'GroupSession_20180512.csv'
+##CALENDARCSV = WORKDIR + 'GroupSession_20180512_02_sort.csv'
+##CALENDARCSV = WORKDIR + 'GroupSession_20180512_10_sort.csv'
+#CALENDARCSV = WORKDIR + 'GroupSession_20180513_10_sort_prd.csv'
+#CALENDARCSV = WORKDIR + 'kietadatawofukkyu_20180513.csv'
+#CALENDARCSV = WORKDIR + 'GroupSession_nokori_20180516_19.csv'
+CALENDARCSV = WORKDIR + '180517_GroupSession_change.csv'
 CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
 SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -59,7 +69,7 @@ TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
 WORKLOG = WORKDIR + 'calendarList_'+TODAY+'.csv'
 DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'location', 'transparency',
            'creator', 'organizer', 'start', 'end', 'recurrence', 'visibility', 'iCalUID', 'sequence', 'attendees',
-           'extendedProperties', 'reminders', 'overrides']
+           'extendedProperties', 'reminders', 'overrides','guestsCanSeeOtherGuests','guestsCanInviteOthers','guestsCanModify']
 #HEADER = {'Content-Type': 'multipart/mixed; boundary=BOUNDARY'}
 csvf = codecs.open(WORKLOG, 'w')
 writeObj = csv.DictWriter(csvf, DICTKEY)  # キーの取得
@@ -145,6 +155,9 @@ def checkExName(ret):
         if ret['name'] == memberData['NAME']:
             logging.info('changeName!!:'+ret['name']+'→'+memberData['EXNAME'])
             ret['name'] = memberData['EXNAME']
+        if ret['priName'] == memberData['NAME']:
+            logging.info('changePriName!!:'+ret['priName']+'→'+memberData['EXNAME'])
+            ret['priName'] = memberData['EXNAME']
     return ret
 
 @jit
@@ -195,10 +208,10 @@ def getMemberAddress(data, memdata = None):
                 break
 
         if flg1 == False or flg2 == False:
-            #logging.debug('name:'+ret['name'])
-            #logging.debug('priName:'+ret['priName'])
-            #logging.debug('flg1:'+str(flg1))
-            #logging.debug('flg2:'+str(flg2))
+            logging.debug('name:'+ret['name'])
+            logging.debug('priName:'+ret['priName'])
+            logging.debug('flg1:'+str(flg1))
+            logging.debug('flg2:'+str(flg2))
             if flg1 == True:
                 ret['pri_email'] = ret['email']
                 ret['retFlg'] = True
@@ -210,8 +223,8 @@ def getMemberAddress(data, memdata = None):
                 ret['priFlg'] = True
                 logging.info('NotName name:'+ret['name']+' priName:'+ret['priName'])
             else:
-                ret = None
                 logging.info('NotPriName,Name:'+ret['name']+' priName:'+ret['priName'])
+                ret = None
     else:
         logging.info('NotUse!!name:'+ret['name']+' priName:'+ret['priName'])
         ret = None
@@ -728,6 +741,7 @@ def main():
                     #if priEmail == '':
                     #    logging.debug('--akande--')
                     #    priEmail = memData['pri_email']
+
                     if priEmail != memData['pri_email']:
                         logging.debug('---change---')
                         logging.debug(priEmail)

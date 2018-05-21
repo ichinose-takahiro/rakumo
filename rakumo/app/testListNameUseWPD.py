@@ -9,15 +9,19 @@ WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession.csv'
 #CALENDARCSV = WORKDIR + '180314_GroupSession.csv'
-CALENDARCSV = WORKDIR + 'GroupSession_20180413.csv'
+#CALENDARCSV = WORKDIR + 'GroupSession_20180413.csv'
+CALENDARCSV = WORKDIR + 'GroupSession_20180512.csv'
 #CSVFILE = WORKDIR + '180314_GroupSession_change_wpd.csv'
-CSVFILE = WORKDIR + '180416_GroupSession_change_ssp_2.csv'
+CSVFILE = WORKDIR + '180517_GroupSession_change.csv'
 USERCSV = WORKDIR + 'user.csv'
 USEREXCSV = WORKDIR + 'userUnique.csv'
 pricnt = 0
 memcnt = 0
 
-USERADDRESS = ['ssp-tky-c@919.jp', 'sato-motoi@919.jp', 'takayama-tetsuhiro@919.jp', 'ichinose-takahiro@919.jp']
+#USERADDRESS = ['ssp-tky-c@919.jp', 'sato-motoi@919.jp', 'takayama-tetsuhiro@919.jp', 'ichinose-takahiro@919.jp']
+#USERADDRESS = ['kubodera-kenta@919.jp', 'kubodera-kenta@919.jp', 'kubodera-kenta@919.jp']
+USERADDRESS = ['ohq-c@919.jp']
+#USERADDRESS = ['ssp-tky-c@919.jp', 'sato-motoi@919.jp', 'takayama-tetsuhiro@919.jp', 'ichinose-takahiro@919.jp','nakagawa-shota@919.jp', 'setogawa-takuya@919.jp','nakahira-shinya@919.jp','ssp-osk-c@919.jp']
 #USERADDRESS = [
 #    'tobaru-hideyasu@919.jp','nishiyama-kohei@919.jp','inomata-toshiyuki@919.jp','takubo-hidenori@919.jp','koike-akihiro@919.jp',
 #    'morimoto-hikaru@919.jp','sato-manami@919.jp','kan-sayuri@919.jp','mikami-takashi@919.jp','hama-yasuki@919.jp',
@@ -138,6 +142,8 @@ def getMemberAddress(data, memdata = None):
     return ret
 def checkbywpd(memData):
     if memData['pri_email'] in USERADDRESS:
+        return True
+    else: 
         if memData['email'] in USERADDRESS:
             return True
 

@@ -7,8 +7,10 @@ from oauth2client import tools
 from oauth2client.file import Storage
 from loginglibrary import init
 import csv
+import json
 import datetime
 from pytz import timezone
+from apiclient.errors import HttpError
 
 WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 SCOPES = 'https://www.googleapis.com/auth/calendar'
@@ -28,15 +30,38 @@ USERADDRESS = [    'tobaru-hideyasu@919.jp','nishiyama-kohei@919.jp','inomata-to
     'yamada-ryohei@919.jp','sakamoto-ayako@919.jp','nomura-miku@919.jp','nakahira-shinya@919.jp'
 ]
 ##DEBUG_ONLY
+USERCSV = WORKDIR + 'user.csv'
+
+def getmemberData():
+    u"""getmemberData メンバーデータを取得する処理
+    CSVからJSONデータを取得します。
+    :return: JSONデータ
+    """
+    memberData = csvToJson(USERCSV)
+    return memberData
+
+def csvToJson(csvData):
+    u""" csvToJson CSVを読み込みJSON化する
+    CSVファイルを読み込みJSONデータにして返します
+    :param csvData: CSVファイルのフルパス
+    :return: JSONデータ
+    """
+    jsonData = []
+    with open(csvData, 'r',encoding='utf-8', errors='ignore', newline='') as f:
+        for line in csv.DictReader(f):
+            line_json = json.dumps(line, ensure_ascii=False)
+            jsonData.append(line_json)
+    return jsonData
 
 def getApiData(service, dictkey, csvf, w, pagetoken, calendarId):
     logging.debug('Getting the first 10 data in the domain')
     #results = service.users().list(customer='my_customer', maxResults=10,orderBy='email').execute()
     #results = service.users().list(customer='my_customer', orderBy='email', pageToken=pagetoken).execute()
 
-
-    calendarList = service.events().list(calendarId=calendarId, pageToken=pagetoken, maxResults=2500).execute()
-
+    try:
+        calendarList = service.events().list(calendarId=calendarId, pageToken=pagetoken, maxResults=2500).execute()
+    except HttpError as error:
+        calendarList = None
     if not calendarList:
         logging.debug('No calendar in the domain.')
 
@@ -49,7 +74,9 @@ def getApiData(service, dictkey, csvf, w, pagetoken, calendarId):
 
         # 各行書き込み
         for target_dict in calendarList['items']:
-            w.writerow(target_dict)
+            #logging.debug(target_dict['creator'])
+            if 'creator' in target_dict and 'email' in target_dict['creator'] and target_dict['creator']['email'] == 'appsadmin@919.jp':
+                w.writerow(target_dict)
 
     return pagetoken
 
@@ -116,9 +143,12 @@ def main():
     # 各行書き込み
     pagetoken = None
     cnt = 0
-    for address in USERADDRESS:
+    #for address in USERADDRESS:
+    for uData in getmemberData():
+        uData = json.loads(uData,encoding='UTF-8')
         while cnt < 10000:
-            pagetoken = getApiData(CAL, dictkey, csvf, w, pagetoken, address)
+            logging.debug(uData['primaryEmail'])
+            pagetoken = getApiData(CAL, dictkey, csvf, w, pagetoken, uData['primaryEmail'])
             if pagetoken is None:
                 break
             cnt = cnt+1

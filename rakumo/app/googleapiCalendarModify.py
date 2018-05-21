@@ -37,41 +37,10 @@ okcnt = 0
 ngcnt = 0
 
 CALENDARCSVS = [
-##'calendarList_20180309172637.csv',
-#'calendarList_20180322101630_api_delete.csv',
-#'calendarList_20180322105509.csv',
-#'calendarList_20180322151027.csv',
-#'calendarList_20180322151127.csv',
-#'calendarList_20180322151251_api_delete.csv',
-#'calendarList_20180322155356.csv',
-#'calendarList_20180322160702.csv',
-#'calendarList_20180322161519.csv',
-#'calendarList_20180322161809.csv',
-#'calendarList_20180322163522.csv',
-#'calendarList_20180322163754.csv',
-#'calendarList_20180322164107.csv',
-#'calendarList_20180322165111.csv',
-#'calendarList_20180326091656_api_delete.csv'
-#'calendarList_20180328122325.csv'
-#'calendarList_20180403094602.csv',
-#'calendarList_20180403094626.csv',
-#'calendarList_20180416182308.csv',
-#'calendarList_20180418090355.csv',
-#'calendarList_20180418165307.csv',
-#'calendarList_20180418171929.csv',
-#'calendarList_20180418195528.csv',
-#'calendarList_20180418203102.csv',
-#'calendarList_20180419090743.csv',
-#'calendarList_20180427132610.csv',
-#'calendarList_20180427180445.csv',
-#'calendarList_20180512131006.csv',
-#'calendarList_20180512140733.csv'
-#'calendarList_20180512152727.csv',
-#'calendarList_20180512162146.csv',
-#'calendarList_20180512205702_api.csv'
-#'calendarList_20180513091246.csv'
 #'calendarList_20180513092400_api.csv'
-'deletedata_20180513_prd.csv'
+#'deletedata_20180513_prd.csv'
+#'testmodify.csv'
+'calendarList_20180513095252_2.csv'
 ]
 @jit
 def getCalendarData(calendacsv):
@@ -82,7 +51,10 @@ def getCalendarData(calendacsv):
     calendarData = csvToJson(calendacsv)
     logging.debug(len(calendarData))
     eventidList = []
+    cnnt = 0
     for data in calendarData:
+        cnnt = cnnt + 1
+        logging.debug('get:'+ str(cnnt))
         data = json.loads(data, encoding='UTF-8')
         if data['status'] != 'cancelled':
             organizer = ast.literal_eval(data['organizer'])
@@ -127,12 +99,19 @@ def bachExecute(EVENT, service,calendarId, http, lastFlg = None):
 #    okcnt = 0
 #    ngcnt = 0
     rtnFlg = False
-
+    
+    #modevent = {}
+    #modevent['guestsCanModify'] = True
+   
     if batch is None:
         batch = service.new_batch_http_request(callback=delete_calendar)
     logging.debug('-----batchpara-------')
     if batchcount < 50 and lastFlg != 'change':
-        batch.add(service.events().delete(calendarId=calendarId, eventId=EVENT['id']))
+        logging.debug(EVENT['id'])
+        modevent = service.events().get(calendarId=calendarId,eventId=EVENT['id']).execute()
+        modevent['guestsCanModify'] = True
+        batch.add(service.events().update(calendarId=calendarId,eventId=EVENT['id'], body=modevent))
+        #batch.add(service.events().update(calendarId,EVENT['id'], modevent))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
 
@@ -175,12 +154,13 @@ def delete_calendar(request_id, response, exception):
         pass
     else:
         exc_content = json.loads(vars(exception)['content'],encoding='UTF-8')['error']
-        if str(exc_content['code']) == '410' and exc_content['errors'][0]['reason'] == 'deleted':
+        if str(exc_content['code']) == '410':
             logging.debug('callback----OK-------')
-            logging.debug('request_id:'+str(request_id) + ' reason:deleted' )
+            logging.debug('request_id:'+str(request_id) + ' reason:changed' )
             ngcnt = ngcnt + 1
             pass
         elif str(exc_content['code']) == '404' and exc_content['errors'][0]['reason'] == 'notFound':
+            logging.debug(exc_content['errors'][0])
             logging.debug('callback----OK-------')
             logging.debug('request_id:'+str(request_id) + ' reason:NOTFOUND' )
             ngcnt = ngcnt + 1

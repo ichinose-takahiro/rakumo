@@ -11,10 +11,12 @@ WORKDIR = '/var/www/html/mysite/rakumo/static/files/'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit.csv'
 #CALENDARCSV = WORKDIR + '180206_GroupSession_edit_change_20180312.csv'
 #CALENDARCSV = WORKDIR + '180314_GroupSession_change.csv'
-CALENDARCSV = WORKDIR + '180314_GroupSession_change_wpd.csv'
+#CALENDARCSV = WORKDIR + '180314_GroupSession_change_wpd.csv'
+CALENDARCSV = WORKDIR + 'GroupSession_20180512_10_sort.csv'
 #CSVFILE = WORKDIR + '180206_GroupSession_edit_change_20180313_r.csv'
 #CSVFILE = WORKDIR + '180314_GroupSession_change_r.csv'
-CSVFILE = WORKDIR + '180314_GroupSession_change_wpd_r.csv'
+#CSVFILE = WORKDIR + '180314_GroupSession_change_wpd_r.csv'
+CSVFILE = WORKDIR + 'GroupSession_20180513_10_sort_prd.csv'
 logging = init('testlist')
 
 def getcalendarData():
