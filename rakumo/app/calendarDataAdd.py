@@ -28,6 +28,7 @@ import googleapiclient.discovery
 from apiclient.http import BatchHttpRequest
 import random
 import ast
+import shutil
 
 logging = init('calendarMain')
 batchcount = 0
@@ -51,10 +52,16 @@ CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
 SERVICE_ACCOUNT_FILE = '/var/www/html/mysite/rakumo/json/service_account.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
-WORKLOG = WORKDIR + 'calendarList_'+TODAY+'.csv'
+OUTPUTDIR = WORKDIR + 'result_'+TODAY
+TEMPDIR = '/tmp/'+'result_'+TODAY
+WORKLOG = OUTPUTDIR + '/calendarList_'+TODAY+'.csv'
+WORKLOG2 = OUTPUTDIR +'/calendarResult_'+TODAY+'.txt'
 DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'location', 'transparency', 'creator', 'organizer', 'start', 'end', 'recurrence', 'visibility', 'iCalUID', 'sequence', 'attendees', 'extendedProperties', 'reminders', 'overrides','guestsCanSeeOtherGuests','guestsCanInviteOthers','guestsCanModify']
 EVENTKEY = ['SID','GRPID','SUMMARY','DESCRIPTION','BIKO','KIND','RESOURCE','DAILY','STARTDATE','ENDDATE','SEI','MEI','PRISEI','PRIMEI','KOJINFLG']
 #HEADER = {'Content-Type': 'multipart/mixed; boundary=BOUNDARY'}
+os.mkdir(OUTPUTDIR)
+#os.mkdir(TEMPDIR)
+writeObjt = open(WORKLOG2, 'w')
 csvf = codecs.open(WORKLOG, 'w')
 writeObj = csv.DictWriter(csvf, DICTKEY)  # キーの取得
 writeObj.writeheader()  # ヘッダー書き込
@@ -205,13 +212,16 @@ def getResourceAddress(data):
     :param data: カレンダーデータ
     :return: 会議室データのメールアドレス
     """
-    ret = None
-    for resourceData in getResource():
-        resourceData = json.loads(resourceData,encoding='UTF-8')
-        if resourceData['resourceName'] == data['RESOURCE']:
-            ret = resourceData['resourceEmail']
-            break
-    return ret
+    retList = []
+    logging.debug(data['RESOURCE'].split(','))
+    for rsData in data['RESOURCE'].split(','):
+        for resourceData in getResource():
+            resourceData = json.loads(resourceData,encoding='UTF-8')
+            #resourceData = json.loads(resourceData,encoding='shift_jis')
+            if resourceData['resourceName'] == rsData:
+                retList.append(resourceData['resourceEmail'])
+                break
+    return retList
 def getcalendarData():
     u""" getcalendarData カレンダーデータを取得
     CSVからJSONデータを取得します。
@@ -242,17 +252,17 @@ def getGroupSessionList():
     CSVからJSONデータを取得します。
     :return: JSONデータ
     """
-    calendarList = csvToJson(CALENDARCSV)
+    calendarList = csvToJson(CALENDARCSV,'shift-jis')
     return calendarList
 
-def csvToJson(csvData):
+def csvToJson(csvData,encode = 'utf-8'):
     u""" csvToJson CSVを読み込みJSON化する
     CSVファイルを読み込みJSONデータにして返します
     :param csvData: CSVファイルのフルパス
     :return: JSONデータ
     """
     jsonData = []
-    with open(csvData, 'r',encoding='utf-8', errors='ignore', newline='') as f:
+    with open(csvData, 'r',encoding=encode, errors='ignore', newline='') as f:
         for line in csv.DictReader(f):
             line_json = json.dumps(line, ensure_ascii=False)
             jsonData.append(line_json)
@@ -274,9 +284,9 @@ def createEvent(clData, memData=None):
     #    return [], None
     # 会議室のチェック
     if clData['RESOURCE'] != 'null':
-        resData = getResourceAddress(clData)
+        resList = getResourceAddress(clData)
     else:
-        resData = None
+        resList = []
     # タイトル設定
     EVENT = {'summary': clData['SUMMARY']}
     eventStartDate = (clData['STARTDATE'][0:10]).replace('/','-')
@@ -355,7 +365,9 @@ def createEvent(clData, memData=None):
     ]
     if memData is not None:
         EVENT['attendees'].append({'email': memData['email'],'responseStatus':'accepted'})
-    if resData is not None:
+    for resData in resList:
+         logging.debug('resData:'+resData)
+    #if resData is not None:
          EVENT['attendees'].append({'email': resData,'responseStatus':'accepted'}) # 会議室を追加
 
     return EVENT,memData['pri_email']
@@ -423,7 +435,7 @@ def insert_calendar(request_id, response, exception):
         if organizer['email'] in execMember:
             execMember[organizer['email']]['cnt'] = execMember[organizer['email']]['cnt'] + 1
         else:
-            execMember[organizer['email']] = {'cnt': 0}
+            execMember[organizer['email']] = {'cnt': 1}
         pass
     else:
         exc_content = json.loads(vars(exception)['content'], encoding='UTF-8')['error']
@@ -448,10 +460,16 @@ def init():
 #@jit
 def Process(name):
     global CALENDARCSV
-    CALENDARCSV = name
-    getProcess()
+    #global writeObjt
 
-    return WORKLOG
+    CALENDARCSV = name
+    #try:
+    getProcess()
+    #except HttpError as error:
+    #    writeObjt.write('予期しないエラー\n')
+    #    writeObjt.write(error)
+    #writeObjt.close()    
+    return TEMPDIR
 
 def getProcess():
     u""" main メイン処理
@@ -460,6 +478,8 @@ def getProcess():
     """
     global priEmail
     global execMember
+    global writeObjt
+
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
@@ -490,7 +510,8 @@ def getProcess():
     _ngcnt = 0    #global batch
     for clData in clList:
         logging.info('csvRowCount:'+str(cnt))
-        clData = json.loads(clData,encoding='UTF-8')
+        #clData = json.loads(clData,encoding='UTF-8')
+        clData = json.loads(clData,encoding='SHIFT-JIS')
         memData = getMemberAddress(clData, memData)
         #logging.debug(memData)
         if memData is not None and memData['retFlg'] == True and memData['useFlg'] == True:
@@ -500,9 +521,12 @@ def getProcess():
                     if {'email': memData['email'], 'responseStatus': 'accepted'} not in EVENT['attendees']:
                         EVENT['attendees'].append({'email': memData['email'],'responseStatus':'accepted'})
                     # resourceDataのチェックと挿入
-                    resAddress = getResourceAddress(clData)
-                    if {'email': resAddress,'responseStatus':'accepted'} not in EVENT['attendees'] and resAddress is not None:
-                        EVENT['attendees'].append({'email': resAddress, 'responseStatus': 'accepted'})
+                    #resAddress = getResourceAddress(clData)
+                    resAddressList = getResourceAddress(clData)
+                    for resAddress in resAddressList:
+                        logging.debug(resAddress)
+                        if {'email': resAddress,'responseStatus':'accepted'} not in EVENT['attendees'] and resAddress is not None:
+                            EVENT['attendees'].append({'email': resAddress, 'responseStatus': 'accepted'})
                     #elif resAddress is not None:
                     #    memData['pri_email'] = resAddress
                     cnt = cnt + 1
@@ -550,10 +574,18 @@ def getProcess():
         progress(cnt-1, len(clList))
     # 最後の一つは必ず実行する
     logging.debug('------------end----------------')
+    logging.debug(EVENT)
     if memData is not None:
         _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
     progress(cnt-1, len(clList))
 
+    writeObjt.write('CSVFILE:' + WORKLOG + '\n')
+    writeObjt.write('calendarMigration END count:'+str(cnt) + '\n')
+    writeObjt.write('noUseCnt:' + str(noUseCnt) + '\n')
+    writeObjt.write('noMigCnt:' + str(noMigCnt) + '\n')
+    writeObjt.write('OK CNT:' + str(_okcnt) + '\n')
+    writeObjt.write('NG CNT:' + str(_ngcnt) + '\n')
+    writeObjt.write('---exec member count----' + '\n')
     logging.info('CSVFILE:' + WORKLOG)
     logging.info('calendarMigration END count:'+str(cnt))
     logging.info('noUseCnt:' + str(noUseCnt))
@@ -562,7 +594,14 @@ def getProcess():
     logging.info('NG CNT:' + str(_ngcnt))
     logging.info('---exec member count----')
     for key, value in execMember.items():
+        writeObjt.write(key+':'+str(value)+'\n')
+        #writeObjt.writelines('\n')
         logging.info(key+':'+str(value))
+
+    writeObjt.close()
+    shutil.make_archive(TEMPDIR, 'zip', root_dir=OUTPUTDIR)
+    #writeObjt.close()
+    #return writeObjt
 
 if __name__ == '__main__':
 

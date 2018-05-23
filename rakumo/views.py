@@ -286,9 +286,9 @@ def bp(request):
             logging.debug(csvName)
             addpath = 'add_'
 
-            response = HttpResponse(open(csvName, 'rb').read(),
-                                    content_type="text/csv")
-            response["Content-Disposition"] = "filename=googleAclList_" + addpath + today + ".csv"
+            response = HttpResponse(open(csvName+'.zip', 'rb').read(),
+                                    content_type="application/zip")
+            response["Content-Disposition"] = "filename=calendarAdd_" + addpath + today + ".zip"
             logging.debug('postType acl output end')
         except forms.ValidationError as e:
             logging.error(e)
@@ -302,5 +302,3 @@ def bp(request):
 
     return response
 
-
-    return response
