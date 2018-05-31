@@ -100,21 +100,22 @@ def getCalendarData(http):
     #now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
     now = (datetime.datetime.utcnow() + datetime.timedelta(days=90) + datetime.timedelta(hours=9)).isoformat() + 'Z'
     print(now)
-    print('Getting the upcoming 10 events')
+    print('Getting the upcoming events')
     returnEvents = []
+    returnEvents.append(['eventId','resourceName','start', 'summary'])
     for resource in getResourceAddress():
-        logging.debug(resource['name'])
+        #logging.debug(resource['name'])
         eventsResult = cal_service.events().list(
             calendarId=resource['address'], maxResults=250 , timeMin=now, singleEvents=True,
             orderBy='startTime').execute()
         events = eventsResult.get('items', [])
-        #print(events)
+        logging.debug(resource['name']+':'+str(len(events))+'件')
         for event in events:
             start = event['start'].get('dateTime', event['start'].get('date'))
             if 'summary' in event:
-                returnEvents.append([resource['name'],start, event['summary']])
+                returnEvents.append([event['id'],resource['name'],start, event['summary']])
             else:
-                returnEvents.append([resource['name'],start, 'なし'])
+                returnEvents.append([event['id'],resource['name'],start, 'なし'])
     #if not events:
     #    logging.debug('No upcoming events found.')
 
@@ -194,6 +195,8 @@ def updateSheets(http, events):
     logging.debug(todaydelta)
     # 一回取得した当日と過去7日以前のシートを削除
     for sheet in sheetsData:
+        if sheet['properties']['title'] == 'NODELETE':
+            continue
         if int(todaydelta) >= int(sheet['properties']['title']) or int(today) == int(sheet['properties']['title']):
             logging.debug("%s %s",sheet['properties']['sheetId'],sheet['properties']['title'])
             deleteSheets(sheet['properties']['sheetId'], service, spreadsheetId)
@@ -222,6 +225,7 @@ def sendMail(data):
     return None
 
 def main():
+    logging.debug('--------------calendarCheck Start---------------')
     """Shows basic usage of the Sheets API.
 
     Creates a Sheets API service object and prints the names and majors of
@@ -244,7 +248,7 @@ def main():
 
     # メール送信
     sendMail(response)
-
+    logging.debug('--------------calendarCheck End---------------')
 
 if __name__ == '__main__':
     main()
