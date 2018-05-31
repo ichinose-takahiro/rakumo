@@ -4,14 +4,16 @@ import os
 import datetime
 import json
 import csv
+from pytz import timezone
 
 from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
-
-WORKDIR = '/var/www/html/googleapi'
-RESOURCE = WORKDIR + '/data/resource.csv'
+from loginglibrary import init
+WORKDIR = '/var/www/html/mysite/rakumo/'
+RESOURCE = WORKDIR + '/static/files/resource.csv'
+logging = init('calendarCheck')
 
 try:
     import argparse
@@ -24,9 +26,10 @@ except ImportError:
 SCOPES = [
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/gmail'
+    'https://www.googleapis.com/auth/gmail.send'
 ]
-CLIENT_SECRET_FILE = 'json/client_secret.json'
+#CLIENT_SECRET_FILE = '../json/client_secret.json'
+CLIENT_SECRET_FILE = '/var/www/html/mysite/rakumo/json/client_secret.json'
 APPLICATION_NAME = 'Google Sheets API Python Quickstart'
 DELETEDAY = 7
 
@@ -87,28 +90,33 @@ def get_credentials():
             credentials = tools.run_flow(flow, store, flags)
         else: # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
-        print('Storing credentials to ' + credential_path)
+        logging.debug('Storing credentials to ' + credential_path)
     return credentials
 
 def getCalendarData(http):
 
     cal_service = discovery.build('calendar', 'v3', http=http)
-
-    now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+    #now(timezone('UTC')
+    #now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+    now = (datetime.datetime.utcnow() + datetime.timedelta(days=90) + datetime.timedelta(hours=9)).isoformat() + 'Z'
+    print(now)
     print('Getting the upcoming 10 events')
     returnEvents = []
     for resource in getResourceAddress():
+        logging.debug(resource['name'])
         eventsResult = cal_service.events().list(
-            calendarId=resource['address'], maxResults=10 , timeMin=now, singleEvents=True,
+            calendarId=resource['address'], maxResults=250 , timeMin=now, singleEvents=True,
             orderBy='startTime').execute()
         events = eventsResult.get('items', [])
-
+        #print(events)
         for event in events:
             start = event['start'].get('dateTime', event['start'].get('date'))
-            returnEvents.append([resource['name'],start, event['summary']])
-
-    if not events:
-        print('No upcoming events found.')
+            if 'summary' in event:
+                returnEvents.append([resource['name'],start, event['summary']])
+            else:
+                returnEvents.append([resource['name'],start, 'なし'])
+    #if not events:
+    #    logging.debug('No upcoming events found.')
 
     return returnEvents
 
@@ -150,7 +158,7 @@ def createSheet(today, service, spreadsheetId):
     request_s = service.spreadsheets().batchUpdate(spreadsheetId=spreadsheetId,
                                                           body=batch_update_request_body)
     res = request_s.execute()
-    print(res)
+    logging.debug(res)
 
 def updateSheets(http, events):
     discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
@@ -182,13 +190,14 @@ def updateSheets(http, events):
 
     today = datetime.date.today().strftime("%Y%m%d")
     todaydelta = (datetime.date.today() - datetime.timedelta(days=DELETEDAY)).strftime("%Y%m%d")
-
+    logging.debug(today)
+    logging.debug(todaydelta)
     # 一回取得した当日と過去7日以前のシートを削除
     for sheet in sheetsData:
-        if int(todaydelta) >= int(sheet['properties']['title']) or int(today) >= int(sheet['properties']['title']):
-            print("%s %s",sheet['properties']['sheetId'],sheet['properties']['title'])
+        if int(todaydelta) >= int(sheet['properties']['title']) or int(today) == int(sheet['properties']['title']):
+            logging.debug("%s %s",sheet['properties']['sheetId'],sheet['properties']['title'])
             deleteSheets(sheet['properties']['sheetId'], service, spreadsheetId)
-            print('シート「' + sheet['properties']['title'] + '」を削除しました')
+            logging.debug('シート「' + sheet['properties']['title'] + '」を削除しました')
 
     #新たに当日のシートを作成
     createSheet(today, service, spreadsheetId)
