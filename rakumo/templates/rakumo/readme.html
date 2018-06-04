@@ -48,7 +48,8 @@
         <h3 id="acl">権限周り(カレンダーの閲覧、編集(代理入力など)権限)の情報取得、編集</h3>
         <div>
            <ul>
-               <li>権限リスト取得<br>カレンダーに登録しているメンバーへのアクセス権限をメンバー毎に情報を一覧で取得します。
+               <li>権限リスト取得<br>カレンダーに登録しているメンバーへのアクセス権限をメンバー毎に情報を一覧で取得します。<br>
+                   ※取得する際はcalendarIdをカラムに、取得したい対象のメールアドレスをCSVですべて登録したファイルを選択し実行します。<br>
                    - calendarId：対象メンバーのメールアドレス<br>
                    - kind：G-Suite用システム用の値です。(特に気にしなくて良いです。)<br>
                    - etag：G-Suite用システム用の値です。(特に気にしなくて良いです。)<br>
@@ -57,7 +58,7 @@
                    - scope_value：対象のメンバーに対する権限を持つアカウントのメールアドレスです。<br>
                    - role：対象のメンバーに対する権限を持つアカウントの権限タイプです。(reader・・・閲覧権限(すべての予定の詳細)、writer・・・予定の変更権限、owner・・・変更及び管理の共有権限、freeBusyReader・・・予定の時間枠のみ表示(詳細を非表示))
                </li>
-               <li>権限追加、更新<br>カレンダーに登録しているメンバーへの権限を追加します。すでに登録している場合は権限のみ変更します。(登録するとお知らせメールが送信されます。)</li>
+               <li>権限追加、更新<br>カレンダーに登録しているメンバーへの権限を追加します。すでに登録している場合は権限のみ変更します。</li>
                <li>権限削除<br>カレンダーに登録しているメンバーへの権限を削除します。</li>
            </ul>
         </div>
@@ -66,9 +67,21 @@
         <h3 id="resource">施設周り(会議室、備品、車など)の情報取得、更新</h3>
         <div>
            <ul>
-               <li>施設リスト取得<br>G-Suiteに登録している施設情報の一覧を取得します。</li>
-               <li>施設情報更新<br></li>
-               <li>施設情報更新 テンプレート取得<br></li>
+               <li>施設リスト取得<br>G-Suiteに登録している施設情報の一覧を取得します。
+                   - resourceId：施設ID(変更不要)<br>
+                   - resourceName：施設名(generatedResourceNameと同じ)<br>
+                   - generatedResourceName：施設名(resourceNameと同じ)<br>
+                   - resourceType：必ず「CATEGORY_UNKNOWN」で入力<br>
+                   - capacity：施設のキャパシティ※現状不使用<br>
+                   - resourceCategory：施設のカテゴリ<br>
+                   - resourceDescription：施設の説明<br>
+                   - buildingId：ビルディングID※現状不使用<br>
+                   - floorName：フロア名※現状不使用</li>
+               <li>施設情報更新<br>
+                   施設に登録している情報を更新します。
+                   ※施設の命名規約は<a href="https://sites.google.com/a/919.jp/qisstop/home/googleapps/resource">こちらから</a>
+               </li>
+               <li>施設情報更新 テンプレート取得<br>施設情報を更新するためのするテンプレートを取得します。</li>
            </ul>
         </div>
     </section>
