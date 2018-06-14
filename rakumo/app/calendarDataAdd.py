@@ -19,6 +19,8 @@ from numba import jit
 from pytz import timezone
 from .loginglibrary import init
 from .checkList import doCheck
+#from loginglibrary import init
+#from checkList import doCheck
 from apiclient.http import BatchHttpRequest
 import random
 import time
@@ -57,14 +59,16 @@ TEMPDIR = '/tmp/'+'result_'+TODAY
 WORKLOG = OUTPUTDIR + '/calendarList_'+TODAY+'.csv'
 WORKLOG2 = OUTPUTDIR +'/calendarResult_'+TODAY+'.txt'
 DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'location', 'transparency', 'creator', 'organizer', 'start', 'end', 'recurrence', 'visibility', 'iCalUID', 'sequence', 'attendees', 'extendedProperties', 'reminders', 'overrides','guestsCanSeeOtherGuests','guestsCanInviteOthers','guestsCanModify']
-EVENTKEY = ['SID','GRPID','SUMMARY','DESCRIPTION','BIKO','KIND','RESOURCE','DAILY','STARTDATE','ENDDATE','SEI','MEI','PRISEI','PRIMEI','KOJINFLG']
+EVENTKEY = ['SID','GRPID','SUMMARY','DESCRIPTION','BIKO','KIND','RESOURCE','DAILY','STARTDATE','STARTTIME','ENDDATE','ENDTIME','SEI','MEI','PRISEI','PRIMEI','KOJINFLG']
 #HEADER = {'Content-Type': 'multipart/mixed; boundary=BOUNDARY'}
 os.mkdir(OUTPUTDIR)
 #os.mkdir(TEMPDIR)
-writeObjt = open(WORKLOG2, 'w')
-csvf = codecs.open(WORKLOG, 'w')
-writeObj = csv.DictWriter(csvf, DICTKEY)  # キーの取得
-writeObj.writeheader()  # ヘッダー書き込
+#writeObjt = codecs.open(WORKLOG2, 'w')
+#csvf = codecs.open(WORKLOG, 'w')
+#writeObj = csv.DictWriter(csvf, DICTKEY)  # キーの取得
+#writeObj.writeheader()  # ヘッダー書き込
+csvf = None
+writeObj = None
 
 STR_T = 'T'
 GMT_OFF = '+09:00'  # ET/MST/GMT-4
@@ -289,27 +293,37 @@ def createEvent(clData, memData=None):
         resList = []
     # タイトル設定
     EVENT = {'summary': clData['SUMMARY']}
-    eventStartDate = (clData['STARTDATE'][0:10]).replace('/','-')
-    eventEndDate = (clData['ENDDATE'][0:10]).replace('/','-')
+
+    # 開始日を抽出
+    eventStartDate = datetime.datetime.strptime(clData['STARTDATE'].replace('/','-')+' '+clData['STARTTIME']+':00', '%Y-%m-%d %H:%M:%S')
+    eventStartDateD = str(eventStartDate)[0:10]
+    eventStartDateT = str(eventStartDate)[11:19]
+
+    # 終了日を抽出
+    eventEndDate = datetime.datetime.strptime(clData['ENDDATE'].replace('/','-')+' '+clData['ENDTIME']+':00', '%Y-%m-%d %H:%M:%S')
+    eventEndDateD = str(eventEndDate)[0:10]
+    eventEndDateT = str(eventEndDate)[11:19]
+    
     # 終日の場合は時間を設定しない
     if clData['DAILY'] == STR_ONE:
         # 開始日設定
-        EVENT['start'] = {'date': eventStartDate}
+        EVENT['start'] = {'date': eventStartDateD}
         # 終了日設定1日足す
-        if clData['STARTDATE'][0:10] == eventEndDate:
-            eventEndDate = str(datetime.datetime.strptime(eventEndDate,"%Y-%m-%d") + datetime.timedelta(days=1))[0:10]
-        EVENT['end'] = {'date': eventEndDate}
+        if eventStartDateD == eventEndDateD:
+            eventEndDateD = str(eventEndDate + datetime.timedelta(days=1))[0:10]
+        EVENT['end'] = {'date': eventEndDateD}
     else:
         # 開始日設定
         EVENT['start'] = {
-            'dateTime': eventStartDate + 'T' + clData['STARTDATE'][11:19] + GMT_OFF,
+            'dateTime': eventStartDateD + 'T' + eventStartDateT + GMT_OFF,
             'timeZone': GMT_PLACE
         }
         # 終了日設定
         EVENT['end'] = {
-            'dateTime': eventEndDate + 'T' + clData['ENDDATE'][11:19] + GMT_OFF,
+            'dateTime': eventEndDateD + 'T' + eventEndDateT + GMT_OFF,
             'timeZone': GMT_PLACE
         }
+
     # 詳細設定 詳細と備考をくっつける
     description = [clData['DESCRIPTION']]
     if len(clData['BIKO']) > 0:
@@ -399,6 +413,7 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
 #SERVICEACCOUNT
 #                batch.execute()
 #SERVICEACCOUNT
+                logging.debug(batch)
                 batch.execute(http=http)
                 rtnFlg = True
                 break
@@ -479,6 +494,13 @@ def getProcess():
     global priEmail
     global execMember
     global writeObjt
+    global csvf
+    global writeObj
+    global batch
+    writeObjt = codecs.open(WORKLOG2, 'w')
+    csvf = codecs.open(WORKLOG, 'w')
+    writeObj = csv.DictWriter(csvf, DICTKEY)  # キーの取得
+    writeObj.writeheader()  # ヘッダー書き込
 
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
     home_dir = os.path.expanduser('~')
@@ -507,7 +529,9 @@ def getProcess():
     recr_cnt = 0
     init()
     _okcnt = 0
-    _ngcnt = 0    #global batch
+    _ngcnt = 0
+    batch = None
+
     for clData in clList:
         logging.info('csvRowCount:'+str(cnt))
         #clData = json.loads(clData,encoding='UTF-8')
@@ -598,11 +622,11 @@ def getProcess():
         #writeObjt.writelines('\n')
         logging.info(key+':'+str(value))
 
-    writeObjt.close()
-    shutil.make_archive(TEMPDIR, 'zip', root_dir=OUTPUTDIR)
     #writeObjt.close()
+    shutil.make_archive(TEMPDIR, 'zip', root_dir=OUTPUTDIR)
+    writeObjt.close()
     #return writeObjt
 
 if __name__ == '__main__':
 
-    main()
+    Process('/var/www/html/mysite/rakumo/static/files/upload/import_test_2_20180613145307_.csv')

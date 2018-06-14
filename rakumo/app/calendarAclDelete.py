@@ -1,4 +1,4 @@
-# ユーザーのカレンダー権限データを取ってくる
+# ユーザーのカレンダー権限データを削除する
 import os
 import httplib2
 from apiclient import discovery
