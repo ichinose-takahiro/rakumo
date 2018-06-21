@@ -301,7 +301,8 @@ def check_resourcecalendar(clData, resAddress, service):
            logging.debug(chkCEnd)
            if (chkStart >= chkCStart and chkEnd <= chkCEnd) \
                or (chkStart <= chkCStart and chkEnd >= chkCStart) \
-               or (chkStart <= chkCEnd and chkEnd >= chkCEnd):
+               or (chkStart <= chkCEnd and chkEnd >= chkCEnd) \
+               or (chkStart <= chkCStart and chkEnd >= chkEnd):
                logging.debug('False')
                return False
            else:
