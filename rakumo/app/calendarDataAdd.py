@@ -271,11 +271,45 @@ def csvToJson(csvData,encode = 'utf-8'):
             line_json = json.dumps(line, ensure_ascii=False)
             jsonData.append(line_json)
     return jsonData
-def progress(p, l):
-    sys.stdout.write("\r%d / 100" %(int(p * 100 / (l - 1))))
-    sys.stdout.flush()
+
+def check_resourcecalendar(clData, resAddress, service):
+    u""" 登録する設備がすでにカレンダーに登録済みかどうかを確認する
+    """
+    calendarList = None
+    logging.debug('check_resourcecalendar'+resAddress)
+    start = clData['STARTDATE'].replace('/','-')+'T00:00:00Z'
+    end = clData['ENDDATE'].replace('/','-')+'T23:59:59Z'
+    chkCStart =  datetime.datetime.strptime(clData['STARTDATE']+ ' '+clData['STARTTIME']+':00', '%Y/%m/%d %H:%M:%S')
+    chkCEnd =  datetime.datetime.strptime(clData['ENDDATE']+ ' '+clData['ENDTIME']+':00', '%Y/%m/%d %H:%M:%S')
+    try:
+        calendar = service.events().list(calendarId=resAddress, timeMin=start, timeMax=end, timeZone="Asia/Tokyo", orderBy="startTime", singleEvents=True)
+        calendarList = calendar.execute()
+    except HttpError as error:
+        calendarList = None
+        raise error
+    if not calendarList:
+        logging.debug('No calendar in the domain.')
+        return True
+    else:
+        #logging.debug(calendarList['items'])
+        for calendardata in calendarList['items']:
+           chkStart = datetime.datetime.strptime(calendardata['start']['dateTime'], '%Y-%m-%dT%H:%M:%S+09:00')
+           chkEnd = datetime.datetime.strptime(calendardata['end']['dateTime'], '%Y-%m-%dT%H:%M:%S+09:00')
+           logging.debug(chkStart)
+           logging.debug(chkEnd)
+           logging.debug(chkCStart)
+           logging.debug(chkCEnd)
+           if (chkStart >= chkCStart and chkEnd <= chkCEnd) \
+               or (chkStart <= chkCStart and chkEnd >= chkCStart) \
+               or (chkStart <= chkCEnd and chkEnd >= chkCEnd):
+               logging.debug('False')
+               return False
+           else:
+               logging.debug('True')
+       
+    return True
 @jit
-def createEvent(clData, memData=None):
+def createEvent(clData, memData=None, service=None):
     u""" createEvent カレンダー入力データを作成
     カレンダーデータからGoogleAPIで実行するためのパラメータを設定する
     :param clData: カレンダーデータ
@@ -291,6 +325,10 @@ def createEvent(clData, memData=None):
         resList = getResourceAddress(clData)
     else:
         resList = []
+    for resData in resList:
+        if check_resourcecalendar(clData, resData, service) == False:
+            return [], None
+
     # タイトル設定
     EVENT = {'summary': clData['SUMMARY']}
 
@@ -453,6 +491,10 @@ def insert_calendar(request_id, response, exception):
             execMember[organizer['email']] = {'cnt': 1}
         pass
     else:
+        logging.debug('callback----except start----')
+        logging.debug('request_id:'+str(request_id) + ' response:' + str(response) )
+        logging.debug(json.loads(vars(exception)['content'], encoding='UTF-8')['error'])
+
         exc_content = json.loads(vars(exception)['content'], encoding='UTF-8')['error']
         if str(exc_content['code']) == '410' and exc_content['errors'][0]['reason'] == 'deleted':
             logging.debug('callback----OK-------')
@@ -464,6 +506,8 @@ def insert_calendar(request_id, response, exception):
             logging.debug('request_id:' + str(request_id) + ' exception:' + str(vars(exception)['content']))
             # Do something with the response
             raise exception
+
+        logging.debug('callback----except end----')
     return response
 
 def init():
@@ -485,6 +529,12 @@ def Process(name):
     #    writeObjt.write(error)
     #writeObjt.close()    
     return TEMPDIR
+
+def checkMissGrpList(missGrpList, clData):
+    for mgd in missGrpList:
+        if mgd['GRPID'] == clData['GRPID']:
+            return False
+    return True
 
 def getProcess():
     u""" main メイン処理
@@ -531,11 +581,15 @@ def getProcess():
     _okcnt = 0
     _ngcnt = 0
     batch = None
+    missGrpList = []
 
     for clData in clList:
         logging.info('csvRowCount:'+str(cnt))
         #clData = json.loads(clData,encoding='UTF-8')
         clData = json.loads(clData,encoding='SHIFT-JIS')
+        # すでに施設予約の入っているカレンダーのあるグループは追加対象にいれない。
+        if checkMissGrpList(missGrpList, clData) == False:
+            continue
         memData = getMemberAddress(clData, memData)
         #logging.debug(memData)
         if memData is not None and memData['retFlg'] == True and memData['useFlg'] == True:
@@ -549,6 +603,12 @@ def getProcess():
                     resAddressList = getResourceAddress(clData)
                     for resAddress in resAddressList:
                         logging.debug(resAddress)
+                        if check_resourcecalendar(clData, resAddress, CAL) == False:
+                            logging.debug('false1')
+                            missGrpList.append({'SID':clData['SID'], 'GRPID':clData['GRPID']})
+                            _ngcnt = _ngcnt + 1
+                            EVENT = []
+                            break
                         if {'email': resAddress,'responseStatus':'accepted'} not in EVENT['attendees'] and resAddress is not None:
                             EVENT['attendees'].append({'email': resAddress, 'responseStatus': 'accepted'})
                     #elif resAddress is not None:
@@ -569,12 +629,24 @@ def getProcess():
                         _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()))
                     recr_cnt = 0
                     logging.debug('------------------------------')
-                    EVENT, memData['pri_email'] = createEvent(clData, memData)
+                    EVENT, memData['pri_email'] = createEvent(clData, memData, CAL)
+                    # 設備で重複スケジュールの場合は飛ばす
+                    if EVENT == [] and memData['pri_email'] == None:
+                        logging.debug('false2')
+                        _ngcnt = _ngcnt + 1
+                        missGrpList.append({'SID':clData['SID'], 'GRPID':clData['GRPID']})
+                        continue
             else:
                 #初回データの取得
                 recr_cnt = 0
                 logging.debug('---start----')
-                EVENT, memData['pri_email'] = createEvent(clData, memData)
+                EVENT, memData['pri_email'] = createEvent(clData, memData, CAL)
+                # 設備で重複スケジュールの場合は飛ばす
+                if EVENT == [] and memData['pri_email'] == None:
+                    logging.debug('false3')
+                    _ngcnt = _ngcnt + 1
+                    missGrpList.append({'SID':clData['SID'], 'GRPID':clData['GRPID']})
+                    continue
                 priEmail = memData['pri_email']
         else:
             if memData is not None:
@@ -595,14 +667,11 @@ def getProcess():
                     'NoUser!!=lineNO:' + str(cnt) + '] GRPID[' + clData['GRPID'] + ']')
         gid = clData['GRPID']
         cnt = cnt + 1
-        progress(cnt-1, len(clList))
     # 最後の一つは必ず実行する
     logging.debug('------------end----------------')
     logging.debug(EVENT)
-    if memData is not None:
+    if memData is not None and EVENT != []:
         _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
-    progress(cnt-1, len(clList))
-
     writeObjt.write('CSVFILE:' + WORKLOG + '\n')
     writeObjt.write('calendarMigration END count:'+str(cnt) + '\n')
     writeObjt.write('noUseCnt:' + str(noUseCnt) + '\n')
@@ -621,6 +690,11 @@ def getProcess():
         writeObjt.write(key+':'+str(value)+'\n')
         #writeObjt.writelines('\n')
         logging.info(key+':'+str(value))
+    writeObjt.write('---setsubi Duplication list----' + '\n')
+    logging.info('---setsubi Duplication list----')
+    for missdata in missGrpList:
+        writeObjt.write('SID:' + str(missdata['SID'])+', GRPID:'+ str(missdata['GRPID'])+'\n')
+        logging.debug('SID:' + str(missdata['SID'])+', GRPID:'+ str(missdata['GRPID']))
 
     #writeObjt.close()
     shutil.make_archive(TEMPDIR, 'zip', root_dir=OUTPUTDIR)
