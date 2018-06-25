@@ -31,6 +31,7 @@ from apiclient.http import BatchHttpRequest
 import random
 import ast
 import shutil
+import os.path
 
 logging = init('calendarMain')
 batchcount = 0
@@ -61,7 +62,7 @@ WORKLOG2 = OUTPUTDIR +'/calendarResult_'+TODAY+'.txt'
 DICTKEY = ['kind', 'etag', 'id', 'status', 'htmlLink', 'created', 'updated', 'summary', 'description', 'location', 'transparency', 'creator', 'organizer', 'start', 'end', 'recurrence', 'visibility', 'iCalUID', 'sequence', 'attendees', 'extendedProperties', 'reminders', 'overrides','guestsCanSeeOtherGuests','guestsCanInviteOthers','guestsCanModify']
 EVENTKEY = ['SID','GRPID','SUMMARY','DESCRIPTION','BIKO','KIND','RESOURCE','DAILY','STARTDATE','STARTTIME','ENDDATE','ENDTIME','SEI','MEI','PRISEI','PRIMEI','KOJINFLG']
 #HEADER = {'Content-Type': 'multipart/mixed; boundary=BOUNDARY'}
-os.mkdir(OUTPUTDIR)
+#os.mkdir(OUTPUTDIR)
 #os.mkdir(TEMPDIR)
 #writeObjt = codecs.open(WORKLOG2, 'w')
 #csvf = codecs.open(WORKLOG, 'w')
@@ -69,6 +70,7 @@ os.mkdir(OUTPUTDIR)
 #writeObj.writeheader()  # ヘッダー書き込
 csvf = None
 writeObj = None
+resHourList = []
 
 STR_T = 'T'
 GMT_OFF = '+09:00'  # ET/MST/GMT-4
@@ -275,12 +277,34 @@ def csvToJson(csvData,encode = 'utf-8'):
 def check_resourcecalendar(clData, resAddress, service):
     u""" 登録する設備がすでにカレンダーに登録済みかどうかを確認する
     """
+    global resHourList
+
     calendarList = None
     logging.debug('check_resourcecalendar'+resAddress)
     start = clData['STARTDATE'].replace('/','-')+'T00:00:00Z'
     end = clData['ENDDATE'].replace('/','-')+'T23:59:59Z'
     chkCStart =  datetime.datetime.strptime(clData['STARTDATE']+ ' '+clData['STARTTIME']+':00', '%Y/%m/%d %H:%M:%S')
     chkCEnd =  datetime.datetime.strptime(clData['ENDDATE']+ ' '+clData['ENDTIME']+':00', '%Y/%m/%d %H:%M:%S')
+    
+    logging.debug('--csvdeplication--')
+    logging.debug(resHourList)
+    for rhData in resHourList:
+        if rhData['resid'] == resAddress:
+            rhchkStart = rhData['chkStart']
+            rhchkEnd = rhData['chkEnd']
+            logging.debug(rhchkStart)
+            logging.debug(rhchkEnd)
+            logging.debug(chkCStart)
+            logging.debug(chkCEnd)            
+            if (rhchkStart >= chkCStart and rhchkEnd <= chkCEnd) \
+                or (rhchkStart <= chkCStart and rhchkEnd >= chkCStart) \
+                or (rhchkStart <= chkCEnd and rhchkEnd >= chkCEnd) \
+                or (rhchkStart <= chkCStart and rhchkEnd >= chkCEnd):
+                logging.debug('csvFalse')
+                resHourList = []
+                return False
+    logging.debug('---')
+
     try:
         calendar = service.events().list(calendarId=resAddress, timeMin=start, timeMax=end, timeZone="Asia/Tokyo", orderBy="startTime", singleEvents=True)
         calendarList = calendar.execute()
@@ -293,21 +317,23 @@ def check_resourcecalendar(clData, resAddress, service):
     else:
         #logging.debug(calendarList['items'])
         for calendardata in calendarList['items']:
-           chkStart = datetime.datetime.strptime(calendardata['start']['dateTime'], '%Y-%m-%dT%H:%M:%S+09:00')
-           chkEnd = datetime.datetime.strptime(calendardata['end']['dateTime'], '%Y-%m-%dT%H:%M:%S+09:00')
-           logging.debug(chkStart)
-           logging.debug(chkEnd)
-           logging.debug(chkCStart)
-           logging.debug(chkCEnd)
-           if (chkStart >= chkCStart and chkEnd <= chkCEnd) \
-               or (chkStart <= chkCStart and chkEnd >= chkCStart) \
-               or (chkStart <= chkCEnd and chkEnd >= chkCEnd) \
-               or (chkStart <= chkCStart and chkEnd >= chkEnd):
-               logging.debug('False')
-               return False
-           else:
-               logging.debug('True')
-       
+            chkStart = datetime.datetime.strptime(calendardata['start']['dateTime'], '%Y-%m-%dT%H:%M:%S+09:00')
+            chkEnd = datetime.datetime.strptime(calendardata['end']['dateTime'], '%Y-%m-%dT%H:%M:%S+09:00')
+            logging.debug(chkStart)
+            logging.debug(chkEnd)
+            logging.debug(chkCStart)
+            logging.debug(chkCEnd)
+            if (chkStart >= chkCStart and chkEnd <= chkCEnd) \
+                or (chkStart <= chkCStart and chkEnd >= chkCStart) \
+                or (chkStart <= chkCEnd and chkEnd >= chkCEnd) \
+                or (chkStart <= chkCStart and chkEnd >= chkCEnd):
+                logging.debug('False')
+                resHourList = []
+                return False
+            else:
+                logging.debug('True')
+    
+    resHourList.append({'resid':resAddress, 'chkStart':chkCStart, 'chkEnd':chkCEnd})
     return True
 @jit
 def createEvent(clData, memData=None, service=None):
@@ -431,6 +457,7 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     global okcnt
     global ngcnt
     global priEmail
+    global resHourList
     rtnFlg = False
 
     if batch is None:
@@ -471,6 +498,8 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
         batch = service.new_batch_http_request(callback=insert_calendar)
         logging.debug('batchexecute-------after---------------------')
         batchcount = 0
+    if rtnFlg == True:
+        resHourList = []
 
     return okcnt, ngcnt
 
@@ -544,10 +573,22 @@ def getProcess():
     """
     global priEmail
     global execMember
-    global writeObjt
+    #global writeObjt
     global csvf
     global writeObj
     global batch
+    global TODAY
+    global WORKLOG
+    global WORKLOG2
+    global OUTPUTDIR
+
+    TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
+    OUTPUTDIR = WORKDIR + 'result_'+TODAY
+    WORKLOG = OUTPUTDIR + '/calendarList_'+TODAY+'.csv'
+    WORKLOG2 = OUTPUTDIR +'/calendarResult_'+TODAY+'.txt'
+
+    if os.path.exists(OUTPUTDIR) == False:
+        os.mkdir(OUTPUTDIR)
     writeObjt = codecs.open(WORKLOG2, 'w')
     csvf = codecs.open(WORKLOG, 'w')
     writeObj = csv.DictWriter(csvf, DICTKEY)  # キーの取得
