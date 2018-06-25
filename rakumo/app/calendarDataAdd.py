@@ -451,13 +451,16 @@ def createEvent(clData, memData=None, service=None):
 
     return EVENT,memData['pri_email']
 
-def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
+def bachExecute(EVENT, service, calendarId, http, _okcnt, _ngcnt, lastFlg = None):
     global batchcount
     global batch
     global okcnt
     global ngcnt
     global priEmail
     global resHourList
+
+    okcnt = _okcnt
+    ngcnt = _ngcnt
     rtnFlg = False
 
     if batch is None:
@@ -465,7 +468,7 @@ def bachExecute(EVENT, service, calendarId, http, lastFlg = None):
     logging.debug('-----batchpara-------')
     logging.debug(calendarId)
     #if batchcount < 50 and lastFlg != 'change':
-    if batchcount < 50:
+    if batchcount < 50 and EVENT != []:
         batch.add(service.events().insert(calendarId=calendarId, conferenceDataVersion=1, sendNotifications=False,body=EVENT))
         batchcount = batchcount + 1
         logging.debug(str(batchcount))
@@ -631,6 +634,7 @@ def getProcess():
         clData = json.loads(clData,encoding='SHIFT-JIS')
         # すでに施設予約の入っているカレンダーのあるグループは追加対象にいれない。
         if checkMissGrpList(missGrpList, clData) == False:
+            cnt = cnt + 1
             continue
         memData = getMemberAddress(clData, memData)
         #logging.debug(memData)
@@ -665,17 +669,20 @@ def getProcess():
                         logging.debug('---change---')
                         logging.debug(priEmail)
                         logging.debug(memData['pri_email'])
-                        _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()), 'change')
+                        _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()), _okcnt, _ngcnt, 'change')
                         priEmail = memData['pri_email']
                     else:
-                        _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()))
+                        logging.debug('---execute---')
+                        _okcnt, _ngcnt = bachExecute(EVENT, CAL, priEmail, creds.authorize(Http()), _okcnt, _ngcnt)
                     recr_cnt = 0
                     logging.debug('------------------------------')
                     EVENT, memData['pri_email'] = createEvent(clData, memData, CAL)
                     # 設備で重複スケジュールの場合は飛ばす
                     if EVENT == [] and memData['pri_email'] == None:
                         logging.debug('false2')
+                        cnt = cnt + 1
                         _ngcnt = _ngcnt + 1
+                        logging.debug(_ngcnt)
                         missGrpList.append({'SID':clData['SID'], 'GRPID':clData['GRPID']})
                         continue
             else:
@@ -686,7 +693,9 @@ def getProcess():
                 # 設備で重複スケジュールの場合は飛ばす
                 if EVENT == [] and memData['pri_email'] == None:
                     logging.debug('false3')
+                    cnt = cnt + 1
                     _ngcnt = _ngcnt + 1
+                    logging.debug(_ngcnt)
                     missGrpList.append({'SID':clData['SID'], 'GRPID':clData['GRPID']})
                     continue
                 priEmail = memData['pri_email']
@@ -712,8 +721,8 @@ def getProcess():
     # 最後の一つは必ず実行する
     logging.debug('------------end----------------')
     logging.debug(EVENT)
-    if memData is not None and EVENT != []:
-        _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), True)
+    if memData is not None:
+        _okcnt, _ngcnt = bachExecute(EVENT, CAL, memData['pri_email'], creds.authorize(Http()), _okcnt, _ngcnt, True)
     writeObjt.write('CSVFILE:' + WORKLOG + '\n')
     writeObjt.write('calendarMigration END count:'+str(cnt) + '\n')
     writeObjt.write('noUseCnt:' + str(noUseCnt) + '\n')
