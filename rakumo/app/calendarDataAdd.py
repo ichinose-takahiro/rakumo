@@ -585,6 +585,7 @@ def getProcess():
     global WORKLOG2
     global OUTPUTDIR
 
+    execMember = {}
     TODAY = datetime.datetime.now(timezone('Asia/Tokyo')).strftime("%Y%m%d%H%M%S")
     OUTPUTDIR = WORKDIR + 'result_'+TODAY
     WORKLOG = OUTPUTDIR + '/calendarList_'+TODAY+'.csv'
