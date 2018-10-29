@@ -432,7 +432,8 @@ def createEvent(clData, memData=None, service=None):
 
     # 公開設定
     if clData['KOJINFLG'] == '1':
-        EVENT['visibility'] = 'confidential'
+    #    EVENT['visibility'] = 'confidential'
+        EVENT['visibility'] = 'default'
         EVENT['transparency'] = 'transparent'
     else:
         EVENT['visibility'] = 'default'
