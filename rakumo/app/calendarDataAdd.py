@@ -33,7 +33,7 @@ import ast
 import shutil
 import os.path
 
-logging = init('calendarMain')
+logging = init('calendarDataAdd')
 batchcount = 0
 batch = None
 okcnt = 0
@@ -335,7 +335,7 @@ def check_resourcecalendar(clData, resAddress, service):
     
     resHourList.append({'resid':resAddress, 'chkStart':chkCStart, 'chkEnd':chkCEnd})
     return True
-@jit
+
 def createEvent(clData, memData=None, service=None):
     u""" createEvent カレンダー入力データを作成
     カレンダーデータからGoogleAPIで実行するためのパラメータを設定する
